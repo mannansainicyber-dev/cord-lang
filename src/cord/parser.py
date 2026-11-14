@@ -13,7 +13,7 @@ from cord.ast_nodes import (
     ReplyStmt, SendStmt, DeleteStmt, RequireStmt, CooldownStmt, AskStmt, ModeStmt,
     ExprStmt, Literal, DurationLiteral, InterpolatedString, Identifier, ChannelRef,
     BinaryOp, UnaryOp, ListLiteral, MapLiteral, IndexAccess, MemberAccess, CallExpr,
-    EmbedBlock, EmbedField
+    EmbedBlock, EmbedField, ButtonItem, SelectOption, SelectItem, ComponentBlock
 )
 
 
@@ -226,6 +226,24 @@ class Parser:
             return EventDecl(event_name="reaction_add", params=[Parameter(name="reaction"), Parameter(name="user")], body=body, line=tok.line, col=tok.col)
         elif "bot starts" in phrase or "ready" in phrase:
             return EventDecl(event_name="ready", params=[], body=body, line=tok.line, col=tok.col)
+        elif "button" in phrase and "clicked" in phrase:
+            target_id = None
+            for w in words:
+                clean_w = str(w).strip("\"'")
+                if clean_w not in ("button", "is", "clicked", "when"):
+                    target_id = clean_w
+                    break
+            evt_name = f"button_{target_id}" if target_id else "button_click"
+            return EventDecl(event_name=evt_name, params=[Parameter(name="author", type_hint="Member"), Parameter(name="button")], body=body, line=tok.line, col=tok.col)
+        elif "select" in phrase and ("chosen" in phrase or "selected" in phrase):
+            target_id = None
+            for w in words:
+                clean_w = str(w).strip("\"'")
+                if clean_w not in ("select", "is", "chosen", "selected", "when"):
+                    target_id = clean_w
+                    break
+            evt_name = f"select_{target_id}" if target_id else "select_choose"
+            return EventDecl(event_name=evt_name, params=[Parameter(name="author", type_hint="Member"), Parameter(name="selected"), Parameter(name="select")], body=body, line=tok.line, col=tok.col)
         else:
             # Fallback custom phrase
             event_clean = phrase.replace(" ", "_")
@@ -344,25 +362,54 @@ class Parser:
 
     def parse_reply_stmt(self) -> ReplyStmt:
         tok = self.advance()  # consume 'reply'
+        expr = None
+        embed_node = None
+        components_node = None
+
         if self.match(TokenType.EMBED):
             self.consume(TokenType.COLON, "Expected ':' after 'embed'")
             embed_node = self.parse_embed_block()
-            return ReplyStmt(embed=embed_node, line=tok.line, col=tok.col)
+        elif self.match(TokenType.WITH):
+            self.consume(TokenType.COLON, "Expected ':' after 'with'")
+            components_node = self.parse_component_block()
+            return ReplyStmt(expr=None, embed=None, components=components_node, line=tok.line, col=tok.col)
         else:
             expr = self.parse_expression()
-            return ReplyStmt(expr=expr, line=tok.line, col=tok.col)
+            if self.match(TokenType.EMBED):
+                self.consume(TokenType.COLON, "Expected ':' after 'embed'")
+                embed_node = self.parse_embed_block()
+
+        if components_node is None and self.match(TokenType.WITH):
+            self.consume(TokenType.COLON, "Expected ':' after 'with'")
+            components_node = self.parse_component_block()
+
+        return ReplyStmt(expr=expr, embed=embed_node, components=components_node, line=tok.line, col=tok.col)
 
     def parse_send_stmt(self) -> SendStmt:
         tok = self.advance()  # consume 'send'
         target = self.parse_primary_expression()
+        expr = None
+        embed_node = None
+        components_node = None
 
         if self.match(TokenType.EMBED):
             self.consume(TokenType.COLON, "Expected ':' after 'embed'")
             embed_node = self.parse_embed_block()
-            return SendStmt(target=target, embed=embed_node, line=tok.line, col=tok.col)
+        elif self.match(TokenType.WITH):
+            self.consume(TokenType.COLON, "Expected ':' after 'with'")
+            components_node = self.parse_component_block()
+            return SendStmt(target=target, expr=None, embed=None, components=components_node, line=tok.line, col=tok.col)
         else:
             expr = self.parse_expression()
-            return SendStmt(target=target, expr=expr, line=tok.line, col=tok.col)
+            if self.match(TokenType.EMBED):
+                self.consume(TokenType.COLON, "Expected ':' after 'embed'")
+                embed_node = self.parse_embed_block()
+
+        if components_node is None and self.match(TokenType.WITH):
+            self.consume(TokenType.COLON, "Expected ':' after 'with'")
+            components_node = self.parse_component_block()
+
+        return SendStmt(target=target, expr=expr, embed=embed_node, components=components_node, line=tok.line, col=tok.col)
 
     def parse_delete_stmt(self) -> DeleteStmt:
         tok = self.advance()  # consume 'delete'
@@ -473,6 +520,197 @@ class Parser:
             image=img_expr,
             footer=footer_expr,
             fields=fields
+        )
+
+    def parse_component_block(self) -> ComponentBlock:
+        self.consume(TokenType.NEWLINE, "Expected newline after 'with:'")
+        self.consume(TokenType.INDENT, "Expected indented component block")
+
+        items: List[ASTNode] = []
+        while not self.check(TokenType.DEDENT) and not self.check(TokenType.EOF):
+            self.skip_newlines()
+            if self.check(TokenType.DEDENT):
+                break
+
+            item_tok = self.advance()
+            val = str(item_tok.value).lower() if item_tok.value is not None else ""
+            if item_tok.type == TokenType.BUTTON or val == "button":
+                items.append(self.parse_button_item(item_tok))
+            elif item_tok.type == TokenType.SELECT or val == "select":
+                items.append(self.parse_select_item(item_tok))
+            else:
+                raise ParserError(f"Unexpected component '{item_tok.value}'. Expected 'button' or 'select'", item_tok.line, item_tok.col)
+
+            self.skip_newlines()
+
+        self.consume(TokenType.DEDENT, "Expected end of component block")
+        return ComponentBlock(items=items)
+
+    def parse_button_item(self, tok: Token) -> ButtonItem:
+        id_expr = self.parse_primary_expression()
+
+        label_expr = None
+        style_expr = None
+        emoji_expr = None
+        url_expr = None
+        disabled_expr = None
+
+        if self.match(TokenType.COLON):
+            self.consume(TokenType.NEWLINE, "Expected newline after button header")
+            self.consume(TokenType.INDENT, "Expected indented button properties")
+            while not self.check(TokenType.DEDENT) and not self.check(TokenType.EOF):
+                self.skip_newlines()
+                if self.check(TokenType.DEDENT):
+                    break
+                prop_tok = self.advance()
+                prop_name = str(prop_tok.value).lower()
+                self.match(TokenType.COLON)
+                self.match(TokenType.ASSIGN)
+                val_expr = self.parse_expression()
+                if prop_name == "label":
+                    label_expr = val_expr
+                elif prop_name == "style":
+                    style_expr = val_expr
+                elif prop_name == "emoji":
+                    emoji_expr = val_expr
+                elif prop_name == "url":
+                    url_expr = val_expr
+                elif prop_name == "disabled":
+                    disabled_expr = val_expr
+                else:
+                    raise ParserError(f"Unknown button property '{prop_name}'", prop_tok.line, prop_tok.col)
+                self.skip_newlines()
+            self.consume(TokenType.DEDENT, "Expected end of button block")
+        else:
+            # Inline form: e.g. label="foo" style="bar"
+            while not self.check(TokenType.NEWLINE) and not self.check(TokenType.EOF) and not self.check(TokenType.DEDENT):
+                prop_tok = self.advance()
+                prop_name = str(prop_tok.value).lower()
+                self.match(TokenType.ASSIGN)
+                self.match(TokenType.COLON)
+                val_expr = self.parse_expression()
+                if prop_name == "label":
+                    label_expr = val_expr
+                elif prop_name == "style":
+                    style_expr = val_expr
+                elif prop_name == "emoji":
+                    emoji_expr = val_expr
+                elif prop_name == "url":
+                    url_expr = val_expr
+                elif prop_name == "disabled":
+                    disabled_expr = val_expr
+                else:
+                    raise ParserError(f"Unknown button property '{prop_name}'", prop_tok.line, prop_tok.col)
+
+        return ButtonItem(
+            custom_id=id_expr,
+            label=label_expr,
+            style=style_expr,
+            emoji=emoji_expr,
+            url=url_expr,
+            disabled=disabled_expr,
+            line=tok.line,
+            col=tok.col
+        )
+
+    def parse_select_item(self, tok: Token) -> SelectItem:
+        id_expr = self.parse_primary_expression()
+        self.consume(TokenType.COLON, "Expected ':' after select name/id")
+        self.consume(TokenType.NEWLINE, "Expected newline after select header")
+        self.consume(TokenType.INDENT, "Expected indented select properties")
+
+        placeholder_expr = None
+        min_vals_expr = None
+        max_vals_expr = None
+        disabled_expr = None
+        options: List[SelectOption] = []
+
+        while not self.check(TokenType.DEDENT) and not self.check(TokenType.EOF):
+            self.skip_newlines()
+            if self.check(TokenType.DEDENT):
+                break
+            prop_tok = self.advance()
+            prop_name = str(prop_tok.value).lower()
+            if prop_tok.type == TokenType.OPTION or prop_name == "option":
+                opt_val_expr = self.parse_primary_expression()
+                opt_label = None
+                opt_desc = None
+                opt_emoji = None
+                opt_default = None
+
+                if self.match(TokenType.COLON):
+                    self.consume(TokenType.NEWLINE, "Expected newline after option")
+                    self.consume(TokenType.INDENT, "Expected indented option properties")
+                    while not self.check(TokenType.DEDENT) and not self.check(TokenType.EOF):
+                        self.skip_newlines()
+                        if self.check(TokenType.DEDENT):
+                            break
+                        op_prop = self.advance()
+                        op_name = str(op_prop.value).lower()
+                        self.match(TokenType.COLON)
+                        self.match(TokenType.ASSIGN)
+                        v_expr = self.parse_expression()
+                        if op_name == "label":
+                            opt_label = v_expr
+                        elif op_name in ("description", "desc"):
+                            opt_desc = v_expr
+                        elif op_name == "emoji":
+                            opt_emoji = v_expr
+                        elif op_name == "default":
+                            opt_default = v_expr
+                        self.skip_newlines()
+                    self.consume(TokenType.DEDENT, "Expected end of option block")
+                else:
+                    while not self.check(TokenType.NEWLINE) and not self.check(TokenType.EOF) and not self.check(TokenType.DEDENT):
+                        op_prop = self.advance()
+                        op_name = str(op_prop.value).lower()
+                        self.match(TokenType.ASSIGN)
+                        self.match(TokenType.COLON)
+                        v_expr = self.parse_expression()
+                        if op_name == "label":
+                            opt_label = v_expr
+                        elif op_name in ("description", "desc"):
+                            opt_desc = v_expr
+                        elif op_name == "emoji":
+                            opt_emoji = v_expr
+                        elif op_name == "default":
+                            opt_default = v_expr
+
+                options.append(SelectOption(
+                    value=opt_val_expr,
+                    label=opt_label,
+                    description=opt_desc,
+                    emoji=opt_emoji,
+                    default=opt_default,
+                    line=prop_tok.line,
+                    col=prop_tok.col
+                ))
+            else:
+                self.match(TokenType.COLON)
+                self.match(TokenType.ASSIGN)
+                val_expr = self.parse_expression()
+                if prop_name in ("placeholder",):
+                    placeholder_expr = val_expr
+                elif prop_name in ("min_values", "min"):
+                    min_vals_expr = val_expr
+                elif prop_name in ("max_values", "max"):
+                    max_vals_expr = val_expr
+                elif prop_name in ("disabled",):
+                    disabled_expr = val_expr
+                else:
+                    raise ParserError(f"Unknown select property '{prop_name}'", prop_tok.line, prop_tok.col)
+            self.skip_newlines()
+
+        self.consume(TokenType.DEDENT, "Expected end of select block")
+        return SelectItem(
+            custom_id=id_expr,
+            placeholder=placeholder_expr,
+            min_values=min_vals_expr,
+            max_values=max_vals_expr,
+            disabled=disabled_expr,
+            options=options,
+            line=tok.line,
+            col=tok.col
         )
 
     def parse_if_stmt(self) -> IfStmt:

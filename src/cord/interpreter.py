@@ -14,11 +14,12 @@ from cord.ast_nodes import (
     ReplyStmt, SendStmt, DeleteStmt, RequireStmt, CooldownStmt, AskStmt, ModeStmt,
     ExprStmt, Literal, DurationLiteral, InterpolatedString, Identifier, ChannelRef,
     BinaryOp, UnaryOp, ListLiteral, MapLiteral, IndexAccess, MemberAccess, CallExpr,
-    EmbedBlock, EmbedField
+    EmbedBlock, EmbedField, ButtonItem, SelectOption, SelectItem, ComponentBlock
 )
 from cord.runtime import (
     Environment, CordRuntimeError, ReturnSignal, CordFunction, CordEmbed,
-    CordMember, CordChannel, ExecutionContext, get_standard_environment
+    CordMember, CordChannel, ExecutionContext, get_standard_environment,
+    CordButton, CordSelectOption, CordSelect, CordView
 )
 from cord.storage import Store
 
@@ -111,10 +112,20 @@ class Interpreter:
             for param in handler.params:
                 if param.name in event_args:
                     evt_env.define(param.name, event_args[param.name])
-                elif param.name == "member":
-                    evt_env.define("member", getattr(ctx, "member", ctx.author))
+                elif param.name in ("member", "author", "user"):
+                    evt_env.define(param.name, getattr(ctx, "member", ctx.author))
+                elif param.name == "button":
+                    evt_env.define(param.name, getattr(ctx, "button", None))
+                elif param.name == "select":
+                    evt_env.define(param.name, getattr(ctx, "select", None))
+                elif param.name in ("selected", "value"):
+                    evt_env.define(param.name, getattr(ctx, "selected", None))
+                elif param.name == "values":
+                    evt_env.define(param.name, getattr(ctx, "values", None))
                 elif param.name == "message":
                     evt_env.define("message", getattr(ctx, "raw_event", None))
+                else:
+                    evt_env.define(param.name, None)
             try:
                 await self.execute_block(handler.body, evt_env, ctx)
             except ReturnSignal:
@@ -218,23 +229,19 @@ class Interpreter:
         elif isinstance(stmt, ReplyStmt):
             if not ctx:
                 raise CordRuntimeError("'reply' can only be used inside a command or event handler", stmt.line, stmt.col)
-            if stmt.embed:
-                embed_obj = await self.build_embed(stmt.embed, env, ctx)
-                await ctx.reply(embed=embed_obj)
-            elif stmt.expr:
-                msg_val = await self.eval_expr(stmt.expr, env, ctx)
-                await ctx.reply(content=str(msg_val) if msg_val is not None else "")
+            embed_obj = await self.build_embed(stmt.embed, env, ctx) if stmt.embed else None
+            view_obj = await self.build_view(stmt.components, env, ctx) if stmt.components else None
+            msg_val = await self.eval_expr(stmt.expr, env, ctx) if stmt.expr else None
+            await ctx.reply(content=str(msg_val) if msg_val is not None else None, embed=embed_obj, view=view_obj)
 
         elif isinstance(stmt, SendStmt):
             if not ctx:
                 raise CordRuntimeError("'send' can only be used when bot runtime context is active", stmt.line, stmt.col)
             target = await self.eval_expr(stmt.target, env, ctx)
-            if stmt.embed:
-                embed_obj = await self.build_embed(stmt.embed, env, ctx)
-                await ctx.send(channel_ref=target, embed=embed_obj)
-            elif stmt.expr:
-                msg_val = await self.eval_expr(stmt.expr, env, ctx)
-                await ctx.send(channel_ref=target, content=str(msg_val) if msg_val is not None else "")
+            embed_obj = await self.build_embed(stmt.embed, env, ctx) if stmt.embed else None
+            view_obj = await self.build_view(stmt.components, env, ctx) if stmt.components else None
+            msg_val = await self.eval_expr(stmt.expr, env, ctx) if stmt.expr else None
+            await ctx.send(channel_ref=target, content=str(msg_val) if msg_val is not None else None, embed=embed_obj, view=view_obj)
 
         elif isinstance(stmt, DeleteStmt):
             if not ctx:
@@ -352,6 +359,14 @@ class Interpreter:
                     return ctx.bot
                 elif name == "member":
                     return getattr(ctx, "member", ctx.author)
+                elif name == "button":
+                    return getattr(ctx, "button", None)
+                elif name == "select":
+                    return getattr(ctx, "select", None)
+                elif name in ("selected", "value"):
+                    return getattr(ctx, "selected", None)
+                elif name == "values":
+                    return getattr(ctx, "values", None)
             raise CordRuntimeError(f"Undefined variable or name '{name}'", expr.line, expr.col)
 
         elif isinstance(expr, ChannelRef):
@@ -518,3 +533,51 @@ class Interpreter:
             embed.add_field(name_val, content_val, inline=inline_val)
 
         return embed
+
+    async def build_view(self, node: ComponentBlock, env: Environment, ctx: Optional[ExecutionContext]) -> CordView:
+        view = CordView()
+        for item in node.items:
+            if isinstance(item, ButtonItem):
+                custom_id = str(await self.eval_expr(item.custom_id, env, ctx))
+                label = str(await self.eval_expr(item.label, env, ctx)) if item.label else None
+                style = str(await self.eval_expr(item.style, env, ctx)) if item.style else "primary"
+                emoji = str(await self.eval_expr(item.emoji, env, ctx)) if item.emoji else None
+                url = str(await self.eval_expr(item.url, env, ctx)) if item.url else None
+                disabled = bool(await self.eval_expr(item.disabled, env, ctx)) if item.disabled else False
+                view.add_item(CordButton(
+                    custom_id=custom_id,
+                    label=label,
+                    style=style,
+                    emoji=emoji,
+                    url=url,
+                    disabled=disabled
+                ))
+            elif isinstance(item, SelectItem):
+                custom_id = str(await self.eval_expr(item.custom_id, env, ctx))
+                placeholder = str(await self.eval_expr(item.placeholder, env, ctx)) if item.placeholder else None
+                min_vals = int(await self.eval_expr(item.min_values, env, ctx)) if item.min_values else 1
+                max_vals = int(await self.eval_expr(item.max_values, env, ctx)) if item.max_values else 1
+                disabled = bool(await self.eval_expr(item.disabled, env, ctx)) if item.disabled else False
+                options = []
+                for opt in item.options:
+                    opt_val = str(await self.eval_expr(opt.value, env, ctx))
+                    opt_lbl = str(await self.eval_expr(opt.label, env, ctx)) if opt.label else opt_val
+                    opt_desc = str(await self.eval_expr(opt.description, env, ctx)) if opt.description else None
+                    opt_emoji = str(await self.eval_expr(opt.emoji, env, ctx)) if opt.emoji else None
+                    opt_def = bool(await self.eval_expr(opt.default, env, ctx)) if opt.default else False
+                    options.append(CordSelectOption(
+                        value=opt_val,
+                        label=opt_lbl,
+                        description=opt_desc,
+                        emoji=opt_emoji,
+                        default=opt_def
+                    ))
+                view.add_item(CordSelect(
+                    custom_id=custom_id,
+                    placeholder=placeholder,
+                    min_values=min_vals,
+                    max_values=max_vals,
+                    disabled=disabled,
+                    options=options
+                ))
+        return view

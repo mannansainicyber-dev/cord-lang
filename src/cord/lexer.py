@@ -57,6 +57,12 @@ class TokenType(Enum):
     ASK = auto()
     TIMEOUT = auto()
 
+    # Keywords - UI Components
+    WITH = auto()
+    BUTTON = auto()
+    SELECT = auto()
+    OPTION = auto()
+
     # Keywords - Embeds
     EMBED = auto()
     TITLE = auto()
@@ -147,6 +153,10 @@ KEYWORDS = {
     "per": TokenType.PER,
     "ask": TokenType.ASK,
     "timeout": TokenType.TIMEOUT,
+    "with": TokenType.WITH,
+    "button": TokenType.BUTTON,
+    "select": TokenType.SELECT,
+    "option": TokenType.OPTION,
     "embed": TokenType.EMBED,
     "title": TokenType.TITLE,
     "description": TokenType.DESCRIPTION,

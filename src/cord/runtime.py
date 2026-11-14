@@ -218,6 +218,88 @@ class CordChannel:
         return self.name
 
 
+class CordButton:
+    """Discord Button component representation."""
+
+    def __init__(
+        self,
+        custom_id: str,
+        label: Optional[str] = None,
+        style: str = "primary",
+        emoji: Optional[str] = None,
+        url: Optional[str] = None,
+        disabled: bool = False
+    ):
+        self.id = custom_id
+        self.custom_id = custom_id
+        self.label = label
+        self.style = style
+        self.emoji = emoji
+        self.url = url
+        self.disabled = disabled
+
+    def __repr__(self) -> str:
+        return f"<Button id={repr(self.id)} label={repr(self.label)} style={repr(self.style)}>"
+
+
+class CordSelectOption:
+    """Discord Select Option representation."""
+
+    def __init__(
+        self,
+        value: str,
+        label: Optional[str] = None,
+        description: Optional[str] = None,
+        emoji: Optional[str] = None,
+        default: bool = False
+    ):
+        self.value = value
+        self.label = label or value
+        self.description = description
+        self.emoji = emoji
+        self.default = default
+
+    def __repr__(self) -> str:
+        return f"<SelectOption value={repr(self.value)} label={repr(self.label)}>"
+
+
+class CordSelect:
+    """Discord Select Menu component representation."""
+
+    def __init__(
+        self,
+        custom_id: str,
+        placeholder: Optional[str] = None,
+        min_values: int = 1,
+        max_values: int = 1,
+        disabled: bool = False,
+        options: Optional[List[CordSelectOption]] = None
+    ):
+        self.id = custom_id
+        self.custom_id = custom_id
+        self.placeholder = placeholder
+        self.min_values = min_values
+        self.max_values = max_values
+        self.disabled = disabled
+        self.options: List[CordSelectOption] = options or []
+
+    def __repr__(self) -> str:
+        return f"<Select id={repr(self.id)} options={len(self.options)}>"
+
+
+class CordView:
+    """Discord View / Component Container."""
+
+    def __init__(self, items: Optional[List[Any]] = None):
+        self.items: List[Any] = items or []
+
+    def add_item(self, item: Any):
+        self.items.append(item)
+
+    def __repr__(self) -> str:
+        return f"<View items={self.items}>"
+
+
 class ExecutionContext:
     """
     Context passed to commands and events during execution.
@@ -243,17 +325,28 @@ class ExecutionContext:
         self.raw_event = raw_event
         self.replies: List[Dict[str, Any]] = []
 
-    async def reply(self, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
+    async def reply(
+        self,
+        content: Optional[str] = None,
+        embed: Optional[CordEmbed] = None,
+        view: Optional[CordView] = None
+    ):
         """Reply to the triggering command or event."""
-        self.replies.append({"type": "reply", "content": content, "embed": embed})
+        self.replies.append({"type": "reply", "content": content, "embed": embed, "view": view})
         if self.bot:
-            await self.bot.send_reply(self, content=content, embed=embed)
+            await self.bot.send_reply(self, content=content, embed=embed, view=view)
 
-    async def send(self, channel_ref: Any, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
+    async def send(
+        self,
+        channel_ref: Any,
+        content: Optional[str] = None,
+        embed: Optional[CordEmbed] = None,
+        view: Optional[CordView] = None
+    ):
         """Send a message to a specific channel."""
-        self.replies.append({"type": "send", "channel": channel_ref, "content": content, "embed": embed})
+        self.replies.append({"type": "send", "channel": channel_ref, "content": content, "embed": embed, "view": view})
         if self.bot:
-            await self.bot.send_channel_message(channel_ref, content=content, embed=embed)
+            await self.bot.send_channel_message(channel_ref, content=content, embed=embed, view=view)
 
     async def delete_trigger(self):
         """Delete the triggering message."""

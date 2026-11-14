@@ -119,6 +119,48 @@ class EmbedBlock(ASTNode):
 
 
 # ============================================================================
+# Interactive UI Components (Buttons & Select Menus)
+# ============================================================================
+
+@dataclass
+class ButtonItem(ASTNode):
+    """Interactive Button component."""
+    custom_id: ASTNode = field(default_factory=ASTNode)
+    label: Optional[ASTNode] = None
+    style: Optional[ASTNode] = None
+    emoji: Optional[ASTNode] = None
+    url: Optional[ASTNode] = None
+    disabled: Optional[ASTNode] = None
+
+
+@dataclass
+class SelectOption(ASTNode):
+    """Option inside a select menu."""
+    value: ASTNode = field(default_factory=ASTNode)
+    label: Optional[ASTNode] = None
+    description: Optional[ASTNode] = None
+    emoji: Optional[ASTNode] = None
+    default: Optional[ASTNode] = None
+
+
+@dataclass
+class SelectItem(ASTNode):
+    """Interactive Select Menu component."""
+    custom_id: ASTNode = field(default_factory=ASTNode)
+    placeholder: Optional[ASTNode] = None
+    min_values: Optional[ASTNode] = None
+    max_values: Optional[ASTNode] = None
+    disabled: Optional[ASTNode] = None
+    options: List[SelectOption] = field(default_factory=list)
+
+
+@dataclass
+class ComponentBlock(ASTNode):
+    """Collection of UI components attached via 'with:'."""
+    items: List[ASTNode] = field(default_factory=list)
+
+
+# ============================================================================
 # Statements
 # ============================================================================
 
@@ -235,17 +277,19 @@ class ReturnStmt(Statement):
 
 @dataclass
 class ReplyStmt(Statement):
-    """Discord reply: reply "..." or reply embed: ..."""
+    """Discord reply: reply "..." or reply embed: ... or reply ... with: ..."""
     expr: Optional[ASTNode] = None
     embed: Optional[EmbedBlock] = None
+    components: Optional[ComponentBlock] = None
 
 
 @dataclass
 class SendStmt(Statement):
-    """Discord send: send #general "hello" or send #general embed: ..."""
+    """Discord send: send #general "hello" or send #general embed: ... or with: ..."""
     target: ASTNode = field(default_factory=ASTNode)  # ChannelRef, Identifier, or Expr
     expr: Optional[ASTNode] = None
     embed: Optional[EmbedBlock] = None
+    components: Optional[ComponentBlock] = None
 
 
 @dataclass

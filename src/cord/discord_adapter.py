@@ -21,7 +21,8 @@ except ImportError:
 from cord.ast_nodes import CommandDecl, EventDecl, TaskDecl, Literal, DurationLiteral, ASTNode
 from cord.interpreter import Interpreter
 from cord.runtime import (
-    ExecutionContext, CordMember, CordChannel, CordRole, CordEmbed, CordRuntimeError
+    ExecutionContext, CordMember, CordChannel, CordRole, CordEmbed, CordRuntimeError,
+    CordButton, CordSelect, CordSelectOption, CordView
 )
 
 
@@ -107,23 +108,88 @@ class MockDiscordAdapter(BaseDiscordAdapter):
     def id(self) -> str:
         return self.user.id
 
-    async def send_reply(self, ctx: ExecutionContext, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
+    async def send_reply(
+        self,
+        ctx: ExecutionContext,
+        content: Optional[str] = None,
+        embed: Optional[CordEmbed] = None,
+        view: Optional[CordView] = None
+    ):
         self.sent_messages.append({
             "action": "reply",
             "content": content,
             "embed": embed,
+            "view": view,
             "channel": ctx.channel.name if ctx.channel else None,
             "target_user": ctx.author.name if ctx.author else None
         })
 
-    async def send_channel_message(self, channel_ref: Any, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
+    async def send_channel_message(
+        self,
+        channel_ref: Any,
+        content: Optional[str] = None,
+        embed: Optional[CordEmbed] = None,
+        view: Optional[CordView] = None
+    ):
         channel_name = channel_ref.name if hasattr(channel_ref, "name") else str(channel_ref)
         self.sent_messages.append({
             "action": "send",
             "channel": channel_name,
             "content": content,
-            "embed": embed
+            "embed": embed,
+            "view": view
         })
+
+    async def click_button(
+        self,
+        custom_id: str,
+        author: Optional[CordMember] = None,
+        channel: Optional[CordChannel] = None
+    ):
+        """Simulates a user clicking an interactive button."""
+        author = author or self.mock_members["100"]
+        channel = channel or self.mock_channels["general"]
+        ctx = ExecutionContext(
+            bot_adapter=self,
+            author=author,
+            channel=channel,
+            guild_id="12345",
+            is_interaction=True
+        )
+        btn_obj = CordButton(custom_id=custom_id)
+        setattr(ctx, "button", btn_obj)
+
+        specific_evt = f"button_{custom_id}"
+        await self.interpreter.execute_event(specific_evt, ctx, {"author": author, "button": btn_obj})
+        await self.interpreter.execute_event("button_click", ctx, {"author": author, "button": btn_obj})
+
+    async def choose_select(
+        self,
+        custom_id: str,
+        values: List[str],
+        author: Optional[CordMember] = None,
+        channel: Optional[CordChannel] = None
+    ):
+        """Simulates a user selecting option(s) in a select menu."""
+        author = author or self.mock_members["100"]
+        channel = channel or self.mock_channels["general"]
+        ctx = ExecutionContext(
+            bot_adapter=self,
+            author=author,
+            channel=channel,
+            guild_id="12345",
+            is_interaction=True
+        )
+        selected_val = values[0] if values else ""
+        sel_obj = CordSelect(custom_id=custom_id)
+        setattr(ctx, "select", sel_obj)
+        setattr(ctx, "selected", selected_val)
+        setattr(ctx, "values", values)
+
+        specific_evt = f"select_{custom_id}"
+        event_args = {"author": author, "selected": selected_val, "values": values, "select": sel_obj}
+        await self.interpreter.execute_event(specific_evt, ctx, event_args)
+        await self.interpreter.execute_event("select_choose", ctx, event_args)
 
     async def delete_message(self, ctx: ExecutionContext):
         self.sent_messages.append({
@@ -676,6 +742,127 @@ class DiscordAdapter(BaseDiscordAdapter):
             embed.add_field(name=f["name"], value=f["value"], inline=f.get("inline", False))
         return embed
 
+    def _to_discord_view(self, cord_view: Optional[CordView]) -> Any:
+        if not HAS_DISCORD or not cord_view or not cord_view.items:
+            return None
+
+        view = discord.ui.View(timeout=None)
+        adapter = self
+
+        for item in cord_view.items:
+            if isinstance(item, CordButton):
+                style_str = (item.style or "primary").lower()
+                style_map = {
+                    "primary": discord.ButtonStyle.primary,
+                    "blurple": discord.ButtonStyle.primary,
+                    "secondary": discord.ButtonStyle.secondary,
+                    "gray": discord.ButtonStyle.secondary,
+                    "grey": discord.ButtonStyle.secondary,
+                    "success": discord.ButtonStyle.success,
+                    "green": discord.ButtonStyle.success,
+                    "danger": discord.ButtonStyle.danger,
+                    "red": discord.ButtonStyle.danger,
+                    "link": discord.ButtonStyle.link,
+                    "url": discord.ButtonStyle.link,
+                }
+                btn_style = style_map.get(style_str, discord.ButtonStyle.primary)
+
+                if btn_style == discord.ButtonStyle.link:
+                    btn = discord.ui.Button(
+                        label=item.label,
+                        style=btn_style,
+                        url=item.url,
+                        emoji=item.emoji,
+                        disabled=item.disabled
+                    )
+                else:
+                    btn = discord.ui.Button(
+                        custom_id=item.custom_id,
+                        label=item.label,
+                        style=btn_style,
+                        emoji=item.emoji,
+                        disabled=item.disabled
+                    )
+
+                    def make_btn_callback(btn_data: CordButton):
+                        async def btn_callback(interaction: discord.Interaction):
+                            if not interaction.response.is_done():
+                                try:
+                                    await interaction.response.defer()
+                                except Exception:
+                                    pass
+                            author = adapter._to_cord_member(interaction.user)
+                            channel = adapter._to_cord_channel(interaction.channel)
+                            ctx = ExecutionContext(
+                                bot_adapter=adapter,
+                                author=author,
+                                channel=channel,
+                                guild_id=str(interaction.guild_id) if interaction.guild_id else None,
+                                is_interaction=True,
+                                raw_event=interaction
+                            )
+                            setattr(ctx, "button", btn_data)
+                            event_args = {"author": author, "button": btn_data}
+                            specific_evt = f"button_{btn_data.custom_id}"
+                            await adapter.interpreter.execute_event(specific_evt, ctx, event_args)
+                            await adapter.interpreter.execute_event("button_click", ctx, event_args)
+                        return btn_callback
+
+                    btn.callback = make_btn_callback(item)
+                view.add_item(btn)
+
+            elif isinstance(item, CordSelect):
+                options = []
+                for opt in item.options:
+                    options.append(discord.SelectOption(
+                        label=opt.label or opt.value,
+                        value=opt.value,
+                        description=opt.description,
+                        emoji=opt.emoji,
+                        default=opt.default
+                    ))
+                sel = discord.ui.Select(
+                    custom_id=item.custom_id,
+                    placeholder=item.placeholder,
+                    min_values=item.min_values,
+                    max_values=item.max_values,
+                    disabled=item.disabled,
+                    options=options
+                )
+
+                def make_sel_callback(sel_data: CordSelect):
+                    async def sel_callback(interaction: discord.Interaction):
+                        if not interaction.response.is_done():
+                            try:
+                                await interaction.response.defer()
+                            except Exception:
+                                pass
+                        author = adapter._to_cord_member(interaction.user)
+                        channel = adapter._to_cord_channel(interaction.channel)
+                        ctx = ExecutionContext(
+                            bot_adapter=adapter,
+                            author=author,
+                            channel=channel,
+                            guild_id=str(interaction.guild_id) if interaction.guild_id else None,
+                            is_interaction=True,
+                            raw_event=interaction
+                        )
+                        values = interaction.data.get("values", [])
+                        selected_val = values[0] if values else ""
+                        setattr(ctx, "select", sel_data)
+                        setattr(ctx, "selected", selected_val)
+                        setattr(ctx, "values", values)
+                        event_args = {"author": author, "selected": selected_val, "values": values, "select": sel_data}
+                        specific_evt = f"select_{sel_data.custom_id}"
+                        await adapter.interpreter.execute_event(specific_evt, ctx, event_args)
+                        await adapter.interpreter.execute_event("select_choose", ctx, event_args)
+                    return sel_callback
+
+                sel.callback = make_sel_callback(item)
+                view.add_item(sel)
+
+        return view
+
     def resolve_channel(self, name: str) -> Optional[CordChannel]:
         clean = name.lstrip("#").strip().lower()
         if hasattr(self, "client") and self.client:
@@ -702,33 +889,63 @@ class DiscordAdapter(BaseDiscordAdapter):
                         return self._to_cord_channel(ch)
         return CordChannel(channel_id=0, name=clean)
 
-    async def send_reply(self, ctx: ExecutionContext, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
+    async def send_reply(
+        self,
+        ctx: ExecutionContext,
+        content: Optional[str] = None,
+        embed: Optional[CordEmbed] = None,
+        view: Optional[CordView] = None
+    ):
         discord_embed = self._to_discord_embed(embed) if embed else None
-        if content is None and discord_embed is None:
-            content = " "
+        discord_view = self._to_discord_view(view) if view else None
+
+        send_kwargs = {}
+        if discord_embed is not None:
+            send_kwargs["embed"] = discord_embed
+        if discord_view is not None:
+            send_kwargs["view"] = discord_view
+        if content is not None:
+            send_kwargs["content"] = content
+        elif not send_kwargs:
+            send_kwargs["content"] = " "
 
         try:
             if ctx.is_interaction and isinstance(ctx.raw_event, discord.Interaction):
                 if ctx.raw_event.response.is_done():
-                    await ctx.raw_event.followup.send(content=content, embed=discord_embed)
+                    await ctx.raw_event.followup.send(**send_kwargs)
                 else:
-                    await ctx.raw_event.response.send_message(content=content, embed=discord_embed)
+                    await ctx.raw_event.response.send_message(**send_kwargs)
             elif isinstance(ctx.raw_event, discord.Message):
-                await ctx.raw_event.reply(content=content, embed=discord_embed)
+                await ctx.raw_event.reply(**send_kwargs)
             elif ctx.channel:
                 # Fallback to channel send
                 ch = self.client.get_channel(int(ctx.channel.id))
                 if ch:
-                    await ch.send(content=content, embed=discord_embed)
+                    await ch.send(**send_kwargs)
         except discord.errors.Forbidden as e:
             print(f"Warning: Failed to reply: Missing Permissions (403 Forbidden): {e}")
         except discord.errors.HTTPException as e:
             print(f"Warning: Failed to reply: {e}")
 
-    async def send_channel_message(self, channel_ref: Any, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
+    async def send_channel_message(
+        self,
+        channel_ref: Any,
+        content: Optional[str] = None,
+        embed: Optional[CordEmbed] = None,
+        view: Optional[CordView] = None
+    ):
         discord_embed = self._to_discord_embed(embed) if embed else None
-        if content is None and discord_embed is None:
-            content = " "
+        discord_view = self._to_discord_view(view) if view else None
+
+        send_kwargs = {}
+        if discord_embed is not None:
+            send_kwargs["embed"] = discord_embed
+        if discord_view is not None:
+            send_kwargs["view"] = discord_view
+        if content is not None:
+            send_kwargs["content"] = content
+        elif not send_kwargs:
+            send_kwargs["content"] = " "
 
         # 1. Target with numeric channel ID
         if hasattr(channel_ref, "id") and str(channel_ref.id) != "0":
@@ -740,7 +957,7 @@ class DiscordAdapter(BaseDiscordAdapter):
                         print(f"Warning: Cannot send to #{ch.name}: Bot lacks 'Send Messages' or 'View Channel' permissions in this channel.")
                         return
                     try:
-                        await ch.send(content=content, embed=discord_embed)
+                        await ch.send(**send_kwargs)
                         return
                     except discord.errors.Forbidden as e:
                         print(f"Warning: Cannot send to #{ch.name}: 403 Forbidden (Missing Access): {e}")
@@ -756,7 +973,7 @@ class DiscordAdapter(BaseDiscordAdapter):
             ch = self.client.get_channel(int(target))
             if ch:
                 try:
-                    await ch.send(content=content, embed=discord_embed)
+                    await ch.send(**send_kwargs)
                     return
                 except discord.errors.Forbidden as e:
                     print(f"Warning: Cannot send to channel ID {target}: 403 Forbidden (Missing Access): {e}")
@@ -775,7 +992,7 @@ class DiscordAdapter(BaseDiscordAdapter):
                 if ch.name.lower() == clean_target:
                     if perms is None or (perms.send_messages and perms.view_channel):
                         try:
-                            await ch.send(content=content, embed=discord_embed)
+                            await ch.send(**send_kwargs)
                             return
                         except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
                             print(f"Warning: Cannot send to #{ch.name}: {e}")
@@ -792,7 +1009,10 @@ class DiscordAdapter(BaseDiscordAdapter):
                         ch_alnum = re.sub(r"[^a-z0-9]", "", ch.name.lower())
                         if clean_alnum == ch_alnum or clean_alnum in ch_alnum or clean_alnum in ch.name.lower():
                             try:
-                                await ch.send(content=content, embed=discord_embed)
+                                await ch.send(**send_kwargs)
+                                return
+                            except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
+                                print(f"Warning: Cannot send to #{ch.name}: {e}")
                                 return
                             except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
                                 print(f"Warning: Cannot send to #{ch.name}: {e}")
