@@ -154,7 +154,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
         # Run top-level script
         import asyncio
-        asyncio.run(interpreter.execute_program(program, ctx=adapter))
+        asyncio.run(interpreter.execute_program(program, ctx=adapter, filename=filepath))
 
         print_info(f"Starting {interpreter.bot_name}...")
         adapter.start()

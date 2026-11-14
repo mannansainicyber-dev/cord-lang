@@ -5,8 +5,9 @@ Executes AST nodes within an asynchronous execution loop, safely sandboxed from 
 
 import asyncio
 import inspect
+import os
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, Set
 from cord.ast_nodes import (
     ASTNode, Program, Block, Statement,
     BotDecl, ConfigDecl, Parameter, CommandDecl, EventDecl, TaskDecl, FunctionDecl,
@@ -15,7 +16,7 @@ from cord.ast_nodes import (
     ExprStmt, Literal, DurationLiteral, InterpolatedString, Identifier, ChannelRef,
     BinaryOp, UnaryOp, ListLiteral, MapLiteral, IndexAccess, MemberAccess, CallExpr,
     EmbedBlock, EmbedField, ButtonItem, SelectOption, SelectItem, ComponentBlock,
-    BanStmt, KickStmt, TimeoutStmt, UnbanStmt
+    BanStmt, KickStmt, TimeoutStmt, UnbanStmt, ImportStmt
 )
 from cord.runtime import (
     Environment, CordRuntimeError, ReturnSignal, CordFunction, CordEmbed,
@@ -65,9 +66,19 @@ class Interpreter:
         self.events: Dict[str, List[EventDecl]] = {}
         self.tasks: Dict[str, TaskDecl] = {}
         self.cooldowns = CooldownManager()
+        self.loaded_modules: Dict[str, Environment] = {}
+        self.loading_stack: Set[str] = set()
+        self.current_file: Optional[str] = None
 
-    async def execute_program(self, program: Program, ctx: Optional[ExecutionContext] = None):
+    async def execute_program(
+        self,
+        program: Program,
+        ctx: Optional[ExecutionContext] = None,
+        filename: Optional[str] = None
+    ):
         """Executes top-level program statements to configure the bot, register handlers, etc."""
+        if filename:
+            self.current_file = os.path.abspath(filename)
         for stmt in program.statements:
             await self.execute_statement(stmt, self.global_env, ctx)
 
@@ -172,6 +183,76 @@ class Interpreter:
                 closure=env
             )
             env.define(stmt.name, fn)
+
+        elif isinstance(stmt, ImportStmt):
+            raw_path = stmt.module_path
+            base_dir = os.path.dirname(self.current_file) if self.current_file else os.getcwd()
+            candidate = os.path.join(base_dir, raw_path)
+
+            resolved_path = None
+            if os.path.isfile(candidate):
+                resolved_path = candidate
+            elif os.path.isfile(candidate + ".cord"):
+                resolved_path = candidate + ".cord"
+            elif os.path.isfile(raw_path):
+                resolved_path = raw_path
+            elif os.path.isfile(raw_path + ".cord"):
+                resolved_path = raw_path + ".cord"
+
+            if not resolved_path:
+                raise CordRuntimeError(f"Module not found: '{raw_path}'", stmt.line, stmt.col)
+
+            canonical = os.path.abspath(resolved_path)
+
+            if canonical in self.loading_stack:
+                return  # Circular import safe guard
+
+            if canonical in self.loaded_modules:
+                mod_env = self.loaded_modules[canonical]
+            else:
+                try:
+                    with open(canonical, "r", encoding="utf-8") as f:
+                        source = f.read()
+                except Exception as e:
+                    raise CordRuntimeError(f"Failed to read module '{raw_path}': {e}", stmt.line, stmt.col)
+
+                from cord.lexer import Lexer
+                from cord.parser import Parser
+
+                tokens = Lexer(source, filename=canonical).tokenize()
+                mod_program = Parser(tokens, filename=canonical).parse()
+
+                self.loading_stack.add(canonical)
+                prev_file = self.current_file
+                self.current_file = canonical
+
+                mod_env = Environment(parent=self.global_env)
+                try:
+                    for s in mod_program.statements:
+                        await self.execute_statement(s, mod_env, ctx)
+                finally:
+                    self.current_file = prev_file
+                    self.loading_stack.discard(canonical)
+
+                self.loaded_modules[canonical] = mod_env
+
+            if stmt.alias:
+                class ModuleProxy:
+                    def __init__(self, values: Dict[str, Any]):
+                        self._values = values
+                    def __getattr__(self, name: str) -> Any:
+                        if name in self._values:
+                            return self._values[name]
+                        raise AttributeError(f"Module has no attribute '{name}'")
+                    def __getitem__(self, item: Any) -> Any:
+                        return self._values[item]
+                    def __repr__(self) -> str:
+                        return f"<Module '{stmt.alias}'>"
+
+                env.define(stmt.alias, ModuleProxy(mod_env.values))
+            else:
+                for k, v in mod_env.values.items():
+                    env.define(k, v)
 
         elif isinstance(stmt, VarAssign):
             val = await self.eval_expr(stmt.value, env, ctx)

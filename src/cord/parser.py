@@ -14,7 +14,7 @@ from cord.ast_nodes import (
     ExprStmt, Literal, DurationLiteral, InterpolatedString, Identifier, ChannelRef,
     BinaryOp, UnaryOp, ListLiteral, MapLiteral, IndexAccess, MemberAccess, CallExpr,
     EmbedBlock, EmbedField, ButtonItem, SelectOption, SelectItem, ComponentBlock,
-    BanStmt, KickStmt, TimeoutStmt, UnbanStmt
+    BanStmt, KickStmt, TimeoutStmt, UnbanStmt, ImportStmt
 )
 
 
@@ -123,6 +123,8 @@ class Parser:
             return self.parse_task_decl()
         elif tok.type == TokenType.FN:
             return self.parse_function_decl()
+        elif tok.type == TokenType.IMPORT:
+            return self.parse_import_stmt()
         else:
             # Allow top-level variables, assignments or statements
             return self.parse_statement()
@@ -284,6 +286,21 @@ class Parser:
         body = self.parse_block()
         return FunctionDecl(name=name_tok.value, params=params, body=body, line=tok.line, col=tok.col)
 
+    def parse_import_stmt(self) -> ImportStmt:
+        tok = self.advance()  # consume 'import'
+        path_tok = self.peek()
+        if path_tok.type not in (TokenType.STRING, TokenType.IDENTIFIER):
+            raise ParserError("Expected module path or name after 'import'", path_tok.line, path_tok.col, 'e.g. import "commands/admin.cord" or import utils')
+        self.advance()
+        module_path = str(path_tok.value)
+
+        alias = None
+        if self.match(TokenType.AS):
+            alias_tok = self.consume(TokenType.IDENTIFIER, "Expected alias identifier after 'as'")
+            alias = str(alias_tok.value)
+
+        return ImportStmt(module_path=module_path, alias=alias, line=tok.line, col=tok.col)
+
     def parse_parameters(self) -> List[Parameter]:
         params: List[Parameter] = []
         if self.check(TokenType.RPAREN):
@@ -347,6 +364,8 @@ class Parser:
             return self.parse_timeout_stmt()
         elif tok.type == TokenType.UNBAN:
             return self.parse_unban_stmt()
+        elif tok.type == TokenType.IMPORT:
+            return self.parse_import_stmt()
         elif tok.type == TokenType.REQUIRE:
             return self.parse_require_stmt()
         elif tok.type == TokenType.COOLDOWN:

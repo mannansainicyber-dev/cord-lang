@@ -231,6 +231,13 @@ class FunctionDecl(Statement):
 
 
 @dataclass
+class ImportStmt(Statement):
+    """Module import statement: import "path/to/file.cord" [as alias]."""
+    module_path: str = ""
+    alias: Optional[str] = None
+
+
+@dataclass
 class VarAssign(Statement):
     """Variable assignment: target = expr."""
     target: ASTNode = field(default_factory=ASTNode)  # Identifier, IndexAccess, or MemberAccess

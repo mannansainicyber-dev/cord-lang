@@ -35,6 +35,8 @@ class TokenType(Enum):
     TASK = auto()
     EVERY = auto()
     FN = auto()
+    IMPORT = auto()
+    AS = auto()
 
     # Keywords - Control Flow
     IF = auto()
@@ -141,6 +143,8 @@ KEYWORDS = {
     "task": TokenType.TASK,
     "every": TokenType.EVERY,
     "fn": TokenType.FN,
+    "import": TokenType.IMPORT,
+    "as": TokenType.AS,
     "if": TokenType.IF,
     "elif": TokenType.ELIF,
     "else": TokenType.ELSE,
