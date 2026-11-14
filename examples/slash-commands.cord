@@ -1,0 +1,17 @@
+bot "CommandHub"
+
+config:
+    prefix = "!"
+
+# Dual-mode command: available as both /ping and !ping
+command ping:
+    reply "Pong! Bot latency is {bot.latency}ms."
+
+# Explicit Slash-only command: registered exclusively in Discord's slash command tree
+slash command roll(sides: Int = 6):
+    result = (author.id % sides) + 1
+    reply "🎲 Rolled a d{sides}: **{result}**"
+
+# Explicit Prefix-only command: will not appear in Discord slash autocomplete
+prefix command legacy_info:
+    reply "This command is only available via the text prefix '!'."

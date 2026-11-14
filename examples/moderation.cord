@@ -1,0 +1,44 @@
+bot "ModShield"
+
+config:
+    prefix = "!"
+    activity = "guarding servers"
+
+when someone joins:
+    send #welcome "Welcome {member.mention}! Please respect our rules."
+
+command warn(target: Member, reason = "No reason provided"):
+    require permission moderate_members
+    cooldown 3s per user
+
+    if target.is_bot:
+        reply "❌ You cannot warn a bot."
+        return
+
+    # Initialize store if not present
+    if not store.has("warns"):
+        store.warns = {}
+
+    current_warns = store.warns.get(target.id, 0) + 1
+    store.warns[target.id] = current_warns
+
+    reply embed:
+        title "⚠️ Member Warned"
+        description "{target.mention} received a warning from {author.mention}."
+        color "#F59E0B"
+        field "Reason" reason inline=false
+        field "Total Warnings" current_warns inline=true
+
+    send #mod-logs embed:
+        title "Audit Log: Warning Issued"
+        description "Target: {target.name} (ID: {target.id})"
+        color "#EF4444"
+        field "Moderator" author.name inline=true
+        field "Reason" reason inline=true
+
+command warnings(target: Member = null):
+    user = target or author
+    if not store.has("warns"):
+        store.warns = {}
+    count = store.warns.get(user.id, 0)
+    reply "{user.name} currently has **{count}** warning(s)."

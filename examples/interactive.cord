@@ -1,0 +1,16 @@
+bot "QuizBot"
+
+config:
+    prefix = "!"
+
+command quiz:
+    reply "🎲 Starting a quick trivia question! You have 15 seconds to reply."
+    
+    ask for answer "Question: What is the primary programming language for the Cord compiler?" timeout=15s
+
+    if answer == null:
+        reply "⏰ Time is up! The correct answer was Python."
+    elif answer == "Python" or answer == "python":
+        reply "🎉 Correct, {author.name}! You earned 10 server points."
+    else:
+        reply "❌ Incorrect! The answer was Python."

@@ -1,0 +1,43 @@
+bot "CoinForge"
+
+config:
+    prefix = "$"
+
+fn get_balance(user_id):
+    if not store.has("balances"):
+        store.balances = {}
+    return store.balances.get(user_id, 100)
+
+fn set_balance(user_id, amount):
+    if not store.has("balances"):
+        store.balances = {}
+    store.balances[user_id] = amount
+
+command balance:
+    coins = get_balance(author.id)
+    reply "💰 You have **{coins}** coins in your vault."
+
+command daily:
+    cooldown 24h per user
+    bonus = 50
+    new_bal = get_balance(author.id) + bonus
+    set_balance(author.id, new_bal)
+    reply "✨ You claimed your daily bonus of **{bonus}** coins! New balance: {new_bal} coins."
+
+command transfer(recipient: Member, amount: Int):
+    if amount <= 0:
+        reply "❌ Transfer amount must be positive."
+        return
+
+    sender_bal = get_balance(author.id)
+    if sender_bal < amount:
+        reply "❌ Insufficient funds! You only have {sender_bal} coins."
+        return
+
+    set_balance(author.id, sender_bal - amount)
+    set_balance(recipient.id, get_balance(recipient.id) + amount)
+
+    reply "💸 Transferred {amount} coins to {recipient.mention}!"
+
+task lottery every 12h:
+    send #announcements "🎲 12-hour lottery cycle complete! Claim your daily bonus with `$daily`."

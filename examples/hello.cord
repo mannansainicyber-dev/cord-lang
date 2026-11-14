@@ -1,0 +1,15 @@
+bot "GreeterBot"
+
+config:
+    prefix = "!"
+    status = "online"
+    activity = "with Cord"
+
+# Dual-dispatch command (works as both !ping and /ping)
+command ping:
+    reply "Pong! Latency: {bot.latency}ms"
+
+# Command with optional arguments
+command hello(target: Member = null):
+    user = target or author
+    reply "Hello, {user.mention}! Welcome to our server."

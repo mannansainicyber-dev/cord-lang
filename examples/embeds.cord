@@ -1,0 +1,27 @@
+bot "EmbedCraft"
+
+config:
+    prefix = "!"
+
+command profile(target: Member = null):
+    user = target or author
+
+    reply embed:
+        title "User Profile: {user.name}"
+        description "Detailed Discord profile overview"
+        color "#5865F2"
+        thumbnail user.avatar_url
+        footer "Requested by {author.name}"
+        field "Username" user.name inline=true
+        field "Account ID" user.id inline=true
+        field "Is Bot" user.is_bot inline=true
+
+command rules:
+    reply embed:
+        title "📜 Community Guidelines"
+        description "Welcome! Please follow these server rules to keep our community safe."
+        color "#10B981"
+        field "1. Be Respectful" "Treat all community members with courtesy and kindness." inline=false
+        field "2. No Spam" "Avoid excessive mentions, emoji spam, or unapproved advertising." inline=false
+        field "3. Appropriate Channels" "Post topics in their respective designated channels." inline=false
+        footer "Rule updates effective immediately"
