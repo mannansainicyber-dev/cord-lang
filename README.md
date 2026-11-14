@@ -2,12 +2,14 @@
 
 # ⚡ Cord
 
-**An expressive, beginner-friendly programming language designed specifically for building Discord bots.**
+**The dedicated, expressive programming language engineered for Discord bots.**
 
 [![CI](https://github.com/mannansainicyber-dev/cord-lang/actions/workflows/ci.yml/badge.svg)](https://github.com/mannansainicyber-dev/cord-lang/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: Cord](https://img.shields.io/badge/code%20style-cord-purple.svg)](https://github.com/mannansainicyber-dev/cord-lang)
+
+[**Website & Live Simulator**](website/index.html) • [**Language Reference**](docs/language-reference.md) • [**Getting Started**](docs/getting-started.md) • [**Examples**](examples/)
 
 </div>
 
@@ -15,10 +17,11 @@
 
 ## 🌟 Vision
 
-Cord bridges the gap between beginners and experienced programmers:
+Cord eliminates the 50-line async boilerplates and decorator mazes common to general-purpose languages:
 
 - **Beginner Mode:** Readable English-like triggers (`when someone joins:`), clean keywords (`reply`, `ask for`), minimal boilerplate, and helpful diagnostic hints.
 - **Developer Mode:** Expressive control flow, functions (`fn`), typed argument signatures (`target: Member`), permissions guards, cooldowns, persistent state (`store`), and background tasks.
+- **Production Grade:** First-class interactive UI components (Buttons & Selects), native moderation (`ban`, `kick`, `timeout`), built-in async HTTP (`fetch`), zero-config SQLite persistence, and hot reload.
 
 Both styles belong to the **same unified grammar and runtime**. You can mix them freely in the same `.cord` file.
 
@@ -26,13 +29,17 @@ Both styles belong to the **same unified grammar and runtime**. You can mix them
 
 ## 🚀 Key Features
 
+- 🎛️ **First-Class UI Components:** Declare interactive buttons and select menus directly in replies; respond to clicks with declarative `when button "id" is clicked:` blocks.
+- 🛡️ **Native Moderation Primitives:** First-class `ban`, `kick`, `timeout <target> for <duration>`, and `unban` statements with automatic audit-log reason attachment.
+- 🌐 **Async HTTP & JSON Proxy:** Built-in `fetch("url")` and `http.get/post/delete` with intuitive dot-notation access on JSON responses (`res.data.items[0]`).
 - 🔄 **Hybrid Dual-Command Dispatch:** Declare a command once; Cord registers it as **both a slash command (`/`) and a prefix command (`!`)** automatically (or optionally restrict with `slash command` or `prefix command`).
 - 💾 **Built-in Persistent Storage:** An embedded, atomic SQLite store accessible via `store` that survives bot restarts without database setup.
 - 🎨 **Declarative Embed Builder:** Clean, indentation-based embed definitions without tedious object hierarchies.
 - 🛡️ **Declarative Permissions & Cooldowns:** Protect administrative commands with simple `require permission` and `cooldown` guards.
 - 💬 **Interactive Prompts:** Pause execution and await conversational input with `ask for <var> [prompt] timeout=<duration>`.
 - 🧪 **Offline & Token-Free Testability:** A decoupled runtime with a `MockDiscordAdapter` that allows full end-to-end bot testing without internet access or real bot credentials.
-- 🛠️ **Developer Tooling:** Built-in CLI with `cord run`, `cord check`, `cord fmt`, and `cord init`.
+- 🛠️ **Developer Tooling Ecosystem:** Built-in CLI with `cord run`, `cord check`, `cord repl`, `cord docker`, `cord fmt`, and `cord init`.
+- 🧩 **VS Code Extension:** Complete TextMate syntax grammar package for `.cord` files located in `editors/vscode`.
 
 ---
 
@@ -207,6 +214,23 @@ Cord does **not** evaluate scripts using Python's `eval` or `exec`. It runs on a
 - Standard scripts cannot import arbitrary host OS modules (`os`, `sys`, `subprocess`).
 
 *Note:* While the custom interpreter prevents arbitrary code execution, production multi-tenant deployments should enforce container-level isolation (e.g. Docker).
+
+---
+
+## 🌐 Official Website & Live Simulator
+
+Cord features a bespoke developer landing page with an **in-browser interactive Discord runtime simulator**:
+
+- **Live Discord Chat Card:** Click Cord buttons, select dropdown items, and observe real-time state changes and ephemeral replies.
+- **Synchronized Source Code Inspector:** Highlights active Cord event listeners and execution logs during user interaction.
+- **Side-by-Side Comparison:** Interactive comparison between standard `discord.py` boilerplate and Cord syntax.
+- **Browser REPL Terminal:** Try expressions and inspect AST outputs directly on the page.
+
+To view locally:
+```bash
+python3 -m http.server 8080 --directory website
+# Open http://localhost:8080 in your browser
+```
 
 ---
 

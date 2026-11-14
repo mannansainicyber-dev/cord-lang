@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cord — The Dedicated Language for Discord Bots</title>
+  <meta name="description" content="Cord is a domain-specific programming language engineered for Discord bots. First-class UI components, native moderation primitives, zero-config SQLite store, and zero async boilerplate.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="container">
+      <a href="#" class="brand">
+        <img src="assets/cord-logo.svg" alt="Cord Logo" class="brand-logo">
+        <span>Cord</span>
+        <span class="brand-badge">v0.2.0</span>
+      </a>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#comparison">Why Cord</a></li>
+          <li><a href="#simulator">Live Simulator</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#showcase">Code Gallery</a></li>
+          <li><a href="#tooling">Developer Tools</a></li>
+          <li><a href="#quickstart">Quickstart</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="https://github.com/mannansainicyber-dev/cord-lang" target="_blank" rel="noopener noreferrer" class="btn-ghost">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+          </svg>
+          <span>Star on GitHub</span>
+        </a>
+        <a href="#quickstart" class="btn-primary">Get Started</a>
+        <button class="mobile-toggle" aria-label="Toggle Navigation Menu">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-pill-wrapper">
+        <div class="hero-pill">
+          <span class="dot"></span>
+          <span>CORD 0.2.0 • Interactive UI, Native HTTP & Moderation</span>
+        </div>
+      </div>
+
+      <h1 class="hero-title">
+        The Dedicated Language<br>
+        <span class="gradient-text">for Discord Bots.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Stop fighting 50-line async decorator mazes. Cord gives you first-class interactive UI components, native moderation statements, built-in SQLite persistence, and non-blocking background loops in a clean, human-readable syntax.
+      </p>
+
+      <div class="hero-cta-group">
+        <!-- Terminal Install Card -->
+        <div class="install-card">
+          <div class="install-header">
+            <div class="install-tabs">
+              <button class="install-tab active" data-cmd="pip">pip</button>
+              <button class="install-tab" data-cmd="pipx">pipx</button>
+              <button class="install-tab" data-cmd="docker">docker</button>
+            </div>
+            <button class="btn-copy" data-copy-target="installCmdText" title="Copy to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <div class="install-body">
+            <div class="install-cmd">
+              <span class="prompt-symbol">$</span>
+              <code id="installCmdText">pip install cord-lang</code>
+            </div>
+          </div>
+        </div>
+
+        <a href="#simulator" class="btn-ghost" style="padding: 13px 20px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Try Interactive Simulator
+        </a>
+      </div>
+
+      <!-- Hero Metrics Bar -->
+      <div class="hero-stats-row">
+        <div class="stat-item">
+          <div class="stat-value accent-emerald">78% Less Code</div>
+          <div class="stat-label">Compared to standard discord.py boilerplate</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value accent-discord">Dual Modality</div>
+          <div class="stat-label">Slash commands + prefix commands unified</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">0 Async Plumbing</div>
+          <div class="stat-label">No coroutines, event-loop locks or callback hell</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">Zero-Config DB</div>
+          <div class="stat-label">Built-in persistent SQLite store out of the box</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Side-by-Side Comparison Section -->
+  <section class="section" id="comparison">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Syntax Comparison</span>
+        <h2 class="section-title">Less Plumbing. More Bot.</h2>
+        <p class="section-desc">
+          Building a simple button menu with an interactive response in Python requires subclassing <code>discord.ui.View</code>, manual interaction callbacks, ephemeral flags, and intent setup. In Cord, it's 8 clean lines.
+        </p>
+      </div>
+
+      <div class="comparison-container">
+        <!-- discord.py card -->
+        <div class="comparison-card">
+          <div class="comparison-card-header">
+            <div class="comparison-card-title">
+              <span>Standard discord.py</span>
+            </div>
+            <span class="badge-pill danger">38 lines • Verbose</span>
+          </div>
+          <div class="comparison-code-wrap">
+            <pre><code><span class="kw">import</span> discord
+<span class="kw">from</span> discord.ext <span class="kw">import</span> commands
+
+<span class="kw">class</span> <span class="fn">VerifyMenu</span>(discord.ui.View):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        <span class="fn">super</span>().__init__(timeout=<span class="num">None</span>)
+
+    <span class="op">@discord.ui.button</span>(
+        label=<span class="str">"Verify Account"</span>, 
+        style=discord.ButtonStyle.green, 
+        custom_id=<span class="str">"verify_btn"</span>
+    )
+    <span class="kw">async def</span> <span class="fn">verify_cb</span>(self, interaction: discord.Interaction, button: discord.ui.Button):
+        role = discord.utils.get(interaction.guild.roles, name=<span class="str">"Verified"</span>)
+        <span class="kw">await</span> interaction.user.add_roles(role)
+        <span class="kw">await</span> interaction.response.send_message(
+            <span class="str">f"Verified {interaction.user.name}!"</span>, 
+            ephemeral=<span class="kw">True</span>
+        )
+
+intents = discord.Intents.default()
+intents.message_content = <span class="kw">True</span>
+bot = commands.Bot(command_prefix=<span class="str">"!"</span>, intents=intents)
+
+<span class="op">@bot.command</span>()
+<span class="kw">async def</span> <span class="fn">menu</span>(ctx):
+    <span class="kw">await</span> ctx.send(
+        <span class="str">"Click below to verify:"</span>, 
+        view=VerifyMenu()
+    )
+
+bot.run(TOKEN)</code></pre>
+          </div>
+          <div class="comparison-stats">
+            <span>Requires View subclassing</span>
+            <span>Manual interaction tokens</span>
+          </div>
+        </div>
+
+        <!-- Cord card -->
+        <div class="comparison-card highlight">
+          <div class="comparison-card-header">
+            <div class="comparison-card-title">
+              <img src="assets/cord-logo.svg" width="18" height="18" alt="Cord">
+              <span>Cord</span>
+            </div>
+            <span class="badge-pill success">8 lines • Declarative</span>
+          </div>
+          <div class="comparison-code-wrap">
+            <pre><code><span class="kw">bot</span> <span class="str">"Greeter"</span>
+
+<span class="kw">command</span> menu:
+    <span class="kw">reply</span> <span class="str">"Click below to verify:"</span> <span class="kw">with</span>:
+        <span class="kw">button</span> <span class="str">"verify_btn"</span>:
+            label <span class="str">"Verify Account"</span>
+            style <span class="str">"success"</span>
+
+<span class="kw">when</span> <span class="kw">button</span> <span class="str">"verify_btn"</span> <span class="kw">is clicked</span>:
+    author.add_role(<span class="str">"Verified"</span>)
+    <span class="kw">reply</span> <span class="str">"Verified {author.name}!"</span></code></pre>
+          </div>
+          <div class="comparison-stats">
+            <span style="color: var(--accent-emerald);">First-class UI components</span>
+            <span style="color: var(--accent-emerald);">Direct reactive event listener</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Simulator Section -->
+  <section class="section" id="simulator">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Interactive Preview</span>
+        <h2 class="section-title">See Cord React in Real-Time</h2>
+        <p class="section-desc">
+          Click the Discord buttons and change the dropdown below. Watch how Cord's declarative event handlers execute and update the message state instantaneously.
+        </p>
+      </div>
+
+      <div class="simulator-layout">
+        <!-- Mock Discord Client Card -->
+        <div class="discord-mockup">
+          <div class="discord-header">
+            <div class="discord-channel-info">
+              <span class="hash">#</span>
+              <span>bot-playground</span>
+            </div>
+            <div class="discord-status-badge">
+              <span>●</span>
+              <span>Cord Engine Active</span>
+            </div>
+          </div>
+
+          <div class="discord-body">
+            <div class="discord-message">
+              <div class="discord-avatar">C</div>
+              <div class="discord-msg-content">
+                <div class="discord-meta">
+                  <span class="discord-username">CordBot</span>
+                  <span class="discord-bot-badge">APP</span>
+                  <span class="discord-timestamp">Today at 12:45 PM</span>
+                </div>
+                <div class="discord-text">
+                  Welcome to the live interactive Cord runtime simulator! Try triggering actions below:
+                </div>
+
+                <!-- Rich Embed -->
+                <div class="discord-embed">
+                  <div class="discord-embed-title">Server Member Portal</div>
+                  <div class="discord-embed-desc" id="simEmbedDesc">
+                    Interactive server portal. Active warnings recorded: <strong style="color: #cbd5e1;">1</strong>
+                  </div>
+                  <div class="discord-embed-fields">
+                    <div class="discord-embed-field">
+                      <span class="discord-field-name">Specialization</span>
+                      <span class="discord-field-value" id="simFieldRole">None selected</span>
+                    </div>
+                    <div class="discord-embed-field">
+                      <span class="discord-field-name">Verification</span>
+                      <span class="discord-field-value" id="simFieldStatus">Guest (Unverified)</span>
+                    </div>
+                  </div>
+                  <div class="discord-embed-footer">
+                    <span>⚡ Powered by Cord DSL</span>
+                  </div>
+                </div>
+
+                <!-- Interactive Discord Buttons -->
+                <div class="discord-action-row">
+                  <button class="d-btn d-btn-success" id="simVerifyBtn">
+                    ✅ Verify Member
+                  </button>
+                  <button class="d-btn d-btn-primary" id="simDiceBtn">
+                    🎲 Roll d20
+                  </button>
+                  <button class="d-btn d-btn-danger" id="simWarnBtn">
+                    ⚠️ Issue Warn
+                  </button>
+                  <a href="https://github.com/mannansainicyber-dev/cord-lang" target="_blank" rel="noopener noreferrer" class="d-btn d-btn-secondary">
+                    📖 Read Docs ↗
+                  </a>
+                </div>
+
+                <!-- Interactive Discord Select Menu -->
+                <div class="discord-select-wrapper">
+                  <div class="discord-select-trigger" id="simSelectTrigger">
+                    <span id="simSelectLabel">Select specialization...</span>
+                    <span>▼</span>
+                  </div>
+                  <div class="discord-select-options" id="simSelectOptions">
+                    <div class="discord-select-option" data-value="engineer">
+                      <div>
+                        <div class="discord-option-title">Software Engineer 💻</div>
+                        <div class="discord-option-sub">Builds systems and bot commands</div>
+                      </div>
+                    </div>
+                    <div class="discord-select-option" data-value="designer">
+                      <div>
+                        <div class="discord-option-title">UI/UX Designer 🎨</div>
+                        <div class="discord-option-sub">Designs stunning server interfaces</div>
+                      </div>
+                    </div>
+                    <div class="discord-select-option" data-value="community">
+                      <div>
+                        <div class="discord-option-title">Community Lead 🌟</div>
+                        <div class="discord-option-sub">Nurtures and moderates server members</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Ephemeral notice slot -->
+                <div class="discord-ephemeral-notice" id="simEphemeralNotice" style="display: none;">
+                  👁️ <em>Only you can see this</em> — Click any button above to test event handlers.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cord Runtime Inspector -->
+        <div class="simulator-inspector">
+          <div class="inspector-header">
+            <div class="inspector-title">
+              <span class="inspector-live-pulse"></span>
+              <span>Active Cord Source Code</span>
+            </div>
+            <span class="brand-badge">LIVE AST</span>
+          </div>
+
+          <div class="inspector-code-body" id="inspectorCode">
+            <span class="cmt"># Click any button or select option on the left</span>
+            <br>
+            <span class="kw">bot</span> <span class="str">"InteractiveServerBot"</span>
+            <br><br>
+            <span class="kw">command</span> menu:
+                <span class="kw">reply</span> <span class="str">"Server Portal Controls"</span> <span class="kw">with</span>:
+                    <span class="kw">button</span> <span class="str">"verify_btn"</span>:
+                        label <span class="str">"Verify Member"</span>
+                        style <span class="str">"success"</span>
+                    <span class="kw">button</span> <span class="str">"dice_btn"</span>:
+                        label <span class="str">"Roll d20"</span>
+                        style <span class="str">"primary"</span>
+                    <span class="kw">button</span> <span class="str">"warn_btn"</span>:
+                        label <span class="str">"Issue Warn"</span>
+                        style <span class="str">"danger"</span>
+                    <span class="kw">select</span> <span class="str">"role_select"</span>:
+                        placeholder <span class="str">"Select specialization..."</span>
+          </div>
+
+          <div class="inspector-state-panel">
+            <div class="inspector-state-label">Execution Event Stream</div>
+            <div class="inspector-state-log" id="inspectorLog">
+              [READY] Adapter listening on Gateway • Click UI buttons to test
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bento Grid Features Section -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Architecture</span>
+        <h2 class="section-title">Engineered Specifically for Discord</h2>
+        <p class="section-desc">
+          General-purpose languages require massive frameworks to interact with Discord. Cord treats Discord primitives as language-level keywords.
+        </p>
+      </div>
+
+      <div class="bento-grid">
+        <!-- Feature 1: UI Components -->
+        <div class="bento-card bento-col-8">
+          <div class="bento-icon-pill">🎛️</div>
+          <h3 class="bento-title">First-Class UI Components</h3>
+          <p class="bento-desc">
+            Buttons, Select Menus, and Modals are declared directly in message replies. Handle clicks and selections with intuitive <code>when button "id" is clicked:</code> syntax without managing interaction states or custom IDs manually.
+          </p>
+          <div class="bento-code-snippet">
+            <pre><code><span class="kw">reply</span> <span class="str">"Choose role:"</span> <span class="kw">with</span>:
+    <span class="kw">select</span> <span class="str">"role_picker"</span>:
+        <span class="kw">option</span> <span class="str">"dev"</span>: label <span class="str">"Developer"</span> emoji <span class="str">"💻"</span></code></pre>
+          </div>
+        </div>
+
+        <!-- Feature 2: Native Moderation -->
+        <div class="bento-card bento-col-4">
+          <div class="bento-icon-pill">🛡️</div>
+          <h3 class="bento-title">Native Moderation Primitives</h3>
+          <p class="bento-desc">
+            <code>ban</code>, <code>kick</code>, <code>timeout</code>, and <code>unban</code> are core statements. Cord manages audit logs, duration parsing, and permission security natively.
+          </p>
+          <div class="bento-code-snippet">
+            <pre><code><span class="fn">timeout</span> target <span class="kw">for</span> <span class="num">10m</span> reason=<span class="str">"Spam"</span>
+<span class="fn">ban</span> spammer reason=<span class="str">"Raid bot"</span></code></pre>
+          </div>
+        </div>
+
+        <!-- Feature 3: Async HTTP & Fetch -->
+        <div class="bento-card bento-col-4">
+          <div class="bento-icon-pill">🌐</div>
+          <h3 class="bento-title">Async HTTP & JSON Proxy</h3>
+          <p class="bento-desc">
+            Built-in <code>fetch()</code> and <code>http.get/post/delete</code>. Returned JSON maps allow direct dot-notation access like <code>res.data.items[0].name</code>.
+          </p>
+          <div class="bento-code-snippet">
+            <pre><code>res = <span class="fn">fetch</span>(<span class="str">"https://api.github.com/zen"</span>)
+<span class="kw">reply</span> <span class="str">"Zen: {res.text}"</span></code></pre>
+          </div>
+        </div>
+
+        <!-- Feature 4: Persistent SQLite Store -->
+        <div class="bento-card bento-col-4">
+          <div class="bento-icon-pill">💾</div>
+          <h3 class="bento-title">Zero-Config SQLite Store</h3>
+          <p class="bento-desc">
+            Persistent key-value and JSON storage right in the language. No database drivers, no schemas, no connection pools. Changes persist across restarts automatically.
+          </p>
+          <div class="bento-code-snippet">
+            <pre><code>store.coins[user.id] = (store.coins[user.id] <span class="kw">or</span> <span class="num">0</span>) + <span class="num">50</span></code></pre>
+          </div>
+        </div>
+
+        <!-- Feature 5: Dual Modality -->
+        <div class="bento-card bento-col-4">
+          <div class="bento-icon-pill">⚡</div>
+          <h3 class="bento-title">Dual Modality Engine</h3>
+          <p class="bento-desc">
+            Write your command once: Cord automatically registers it as a native Discord Slash Command (<code>/ping</code>) and a traditional Prefix Command (<code>!ping</code>).
+          </p>
+          <div class="bento-code-snippet">
+            <pre><code><span class="kw">command</span> ping:
+    <span class="kw">reply</span> <span class="str">"Pong! {bot.latency}ms"</span></code></pre>
+          </div>
+        </div>
+
+        <!-- Feature 6: Background Scheduled Tasks -->
+        <div class="bento-card bento-col-6">
+          <div class="bento-icon-pill">⏱️</div>
+          <h3 class="bento-title">Background Loops & Scheduled Tasks</h3>
+          <p class="bento-desc">
+            Automate server announcements, database cleanups, or external health checks with natural interval syntax. No cron expressions or threading headaches.
+          </p>
+          <div class="bento-code-snippet">
+            <pre><code><span class="kw">task</span> status_check <span class="kw">every</span> <span class="num">30m</span>:
+    <span class="kw">send</span> <span class="chan">#status</span> <span class="str">"All systems operational at {time.now()}."</span></code></pre>
+          </div>
+        </div>
+
+        <!-- Feature 7: Modular Multi-file Imports -->
+        <div class="bento-card bento-col-6">
+          <div class="bento-icon-pill">📦</div>
+          <h3 class="bento-title">Multi-File Modular Imports</h3>
+          <p class="bento-desc">
+            Organize complex bots cleanly into modules with circular-dependency protection. Import helper functions, command groups, and shared state seamlessly.
+          </p>
+          <div class="bento-code-snippet">
+            <pre><code><span class="kw">import</span> <span class="str">"./helpers/math.cord"</span>
+<span class="kw">import</span> <span class="str">"./modules/moderation.cord"</span></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Showcase / Gallery Section -->
+  <section class="section" id="showcase">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Code Showcase</span>
+        <h2 class="section-title">Real Cord Bots in Production</h2>
+        <p class="section-desc">
+          Browse real, production-ready Cord code. Click each tab to explore complete example bots.
+        </p>
+      </div>
+
+      <div class="showcase-wrapper">
+        <div class="showcase-nav">
+          <button class="showcase-tab active" data-showcase="components">UI Components</button>
+          <button class="showcase-tab" data-showcase="moderation">Automod & Sanctions</button>
+          <button class="showcase-tab" data-showcase="fetch">REST API & Crypto</button>
+          <button class="showcase-tab" data-showcase="store">SQLite Economy</button>
+          <button class="showcase-tab" data-showcase="tasks">Scheduled Tasks</button>
+        </div>
+
+        <div class="showcase-content-area">
+          <div class="showcase-code-panel" id="showcaseCode">
+            <pre><code><span class="kw">bot</span> <span class="str">"ComponentDemo"</span>
+
+<span class="kw">config</span>:
+    prefix = <span class="str">"!"</span>
+
+<span class="kw">command</span> menu:
+    <span class="kw">reply</span> <span class="str">"Choose your role and actions below:"</span> <span class="kw">with</span>:
+        <span class="kw">button</span> <span class="str">"verify_btn"</span>:
+            label <span class="str">"Verify Account"</span>
+            style <span class="str">"success"</span>
+            emoji <span class="str">"✅"</span>
+        <span class="kw">button</span> <span class="str">"docs_btn"</span>:
+            label <span class="str">"Read Docs"</span>
+            style <span class="str">"link"</span>
+            url <span class="str">"https://cord-lang.org"</span>
+        <span class="kw">select</span> <span class="str">"role_select"</span>:
+            placeholder <span class="str">"Select your specialization..."</span>
+            min_values <span class="num">1</span>
+            max_values <span class="num">1</span>
+            <span class="kw">option</span> <span class="str">"engineer"</span>:
+                label <span class="str">"Software Engineer"</span>
+                emoji <span class="str">"💻"</span>
+            <span class="kw">option</span> <span class="str">"designer"</span>:
+                label <span class="str">"UI/UX Designer"</span>
+                emoji <span class="str">"🎨"</span>
+
+<span class="kw">when</span> <span class="kw">button</span> <span class="str">"verify_btn"</span> <span class="kw">is clicked</span>:
+    <span class="kw">reply</span> <span class="str">"Verification complete! Welcome to the server, {author.name}."</span>
+
+<span class="kw">when</span> <span class="kw">select</span> <span class="str">"role_select"</span> <span class="kw">is chosen</span>:
+    <span class="kw">reply</span> <span class="str">"Updated role preference to **{selected}** for {author.name}!"</span></code></pre>
+          </div>
+
+          <div class="showcase-meta-panel">
+            <div>
+              <h3 class="meta-title" id="showcaseMetaTitle">UI Components & Select Menus</h3>
+              <p class="meta-desc" id="showcaseMetaDesc">
+                Create rich interactive buttons, dropdowns, and modals directly in your reply statements without building subclassed View objects.
+              </p>
+              <ul class="meta-features" id="showcaseMetaFeatures">
+                <li>First-class button and select declarations</li>
+                <li>Direct reactive 'when button is clicked' event listeners</li>
+                <li>Zero interaction tokens or ephemeral boilerplate</li>
+                <li>Automatic component cleanup and disable handling</li>
+              </ul>
+            </div>
+
+            <div style="margin-top: 24px;">
+              <a href="https://github.com/mannansainicyber-dev/cord-lang/tree/main/examples" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="width: 100%; justify-content: center;">
+                Browse All Examples ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Terminal / REPL Widget -->
+  <section class="section" id="tooling">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Interactive REPL</span>
+        <h2 class="section-title">Built-in Developer Tooling</h2>
+        <p class="section-desc">
+          Test Cord expressions interactively with the built-in REPL. Click sample commands below to see live evaluation.
+        </p>
+      </div>
+
+      <div class="repl-terminal">
+        <div class="terminal-titlebar">
+          <div class="window-dots">
+            <span class="w-dot red"></span>
+            <span class="w-dot yellow"></span>
+            <span class="w-dot green"></span>
+          </div>
+          <span class="terminal-title-text">cord repl — interactive shell</span>
+          <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent-emerald);">● ONLINE</span>
+        </div>
+
+        <div class="terminal-screen" id="termScreen">
+          <div class="term-line">Cord Language Shell v0.2.0 (Python 3.12.3)</div>
+          <div class="term-line" style="color: var(--text-muted);">Type expressions or click test chips below to execute against the AST.</div>
+          <div class="term-line" style="margin-top: 10px;"><span class="term-prompt">cord &gt;</span> <span class="term-cmd">bot "Demo"</span></div>
+          <div class="term-output">✓ Initialized bot 'Demo' with prefix '!'</div>
+        </div>
+
+        <div class="term-chips-row">
+          <span class="term-chip-label">Quick Run:</span>
+          <button class="term-chip" data-action="ping">!ping command</button>
+          <button class="term-chip" data-action="fetch">fetch() REST API</button>
+          <button class="term-chip" data-action="store">store.user_coins</button>
+          <button class="term-chip" data-action="check">cord check</button>
+          <button class="term-chip" data-action="docker">cord docker</button>
+        </div>
+      </div>
+
+      <!-- Tooling Grid -->
+      <div class="tooling-grid" style="margin-top: 32px;">
+        <div class="tool-card">
+          <span class="tool-badge">CLI RUNTIME</span>
+          <h4 class="tool-title">cord repl</h4>
+          <p class="tool-desc">Full interactive evaluation loop with multiline syntax parsing, expression debugging, and instant AST feedback.</p>
+          <code class="tool-code">cord repl</code>
+        </div>
+
+        <div class="tool-card">
+          <span class="tool-badge">STATIC ANALYSIS</span>
+          <h4 class="tool-title">cord check</h4>
+          <p class="tool-desc">Offline static syntax and indentation linter. Pinpoints syntax errors before connecting to the Discord gateway.</p>
+          <code class="tool-code">cord check bot.cord</code>
+        </div>
+
+        <div class="tool-card">
+          <span class="tool-badge">PRODUCTION DEPLOY</span>
+          <h4 class="tool-title">cord docker</h4>
+          <p class="tool-desc">Generates optimized multi-stage production Dockerfiles and docker-compose configurations in one command.</p>
+          <code class="tool-code">cord docker --compose</code>
+        </div>
+
+        <div class="tool-card">
+          <span class="tool-badge">EDITOR INTEGRATION</span>
+          <h4 class="tool-title">VS Code Extension</h4>
+          <p class="tool-desc">First-class syntax grammar bundle with syntax highlighting and indentation rules for <code>.cord</code> files.</p>
+          <code class="tool-code">code --install-extension cord-lang</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quickstart Section -->
+  <section class="section" id="quickstart">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Getting Started</span>
+        <h2 class="section-title">Up and Running in 60 Seconds</h2>
+        <p class="section-desc">
+          Build your first Discord bot with three simple terminal commands.
+        </p>
+      </div>
+
+      <div class="quickstart-steps">
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-number">STEP 01</div>
+          <h3 class="step-title">Install Cord</h3>
+          <p class="step-desc">Install the language CLI and runtime from PyPI using pip or pipx:</p>
+          <div class="bento-code-snippet">
+            <code>pip install cord-lang</code>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-number">STEP 02</div>
+          <h3 class="step-title">Scaffold Project</h3>
+          <p class="step-desc">Initialize a clean workspace with starter code and template config:</p>
+          <div class="bento-code-snippet">
+            <code>cord init my-bot<br>cd my-bot</code>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card">
+          <div class="step-number">STEP 03</div>
+          <h3 class="step-title">Run Your Bot</h3>
+          <p class="step-desc">Set your <code>DISCORD_TOKEN</code> in <code>.env</code> and launch with live reload:</p>
+          <div class="bento-code-snippet">
+            <code>cord run bot.cord</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div>
+          <div class="brand">
+            <img src="assets/cord-logo.svg" alt="Cord Logo" class="brand-logo">
+            <span>Cord</span>
+          </div>
+          <p class="footer-brand-desc">
+            The dedicated programming language engineered for Discord bots. Built with love for bot developers.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Documentation</div>
+          <ul class="footer-links">
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/blob/main/docs/getting-started.md" target="_blank" rel="noopener noreferrer">Getting Started</a></li>
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/blob/main/docs/language-reference.md" target="_blank" rel="noopener noreferrer">Language Reference</a></li>
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/blob/main/docs/discord-api.md" target="_blank" rel="noopener noreferrer">Discord API Mapping</a></li>
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/blob/main/docs/developer-mode.md" target="_blank" rel="noopener noreferrer">Developer Mode</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Resources</div>
+          <ul class="footer-links">
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/tree/main/examples" target="_blank" rel="noopener noreferrer">Example Bots</a></li>
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/tree/main/editors" target="_blank" rel="noopener noreferrer">VS Code Extension</a></li>
+            <li><a href="https://pypi.org/project/cord-lang/" target="_blank" rel="noopener noreferrer">PyPI Package</a></li>
+            <li><a href="https://discord.com/developers/docs/intro" target="_blank" rel="noopener noreferrer">Discord Gateway Docs</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Community</div>
+          <ul class="footer-links">
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/issues" target="_blank" rel="noopener noreferrer">Issue Tracker</a></li>
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing</a></li>
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 Cord Language Contributors. Released under the MIT License.</div>
+        <div>Engineered for Python 3.10 &ndash; 3.14</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
