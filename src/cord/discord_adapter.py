@@ -649,54 +649,143 @@ class DiscordAdapter(BaseDiscordAdapter):
             embed.add_field(name=f["name"], value=f["value"], inline=f.get("inline", False))
         return embed
 
+    def resolve_channel(self, name: str) -> Optional[CordChannel]:
+        clean = name.lstrip("#").strip().lower()
+        if hasattr(self, "client") and self.client:
+            # 1. Look for exact match with send permissions
+            for guild in self.client.guilds:
+                for ch in guild.text_channels:
+                    perms = ch.permissions_for(guild.me) if guild.me else None
+                    if ch.name.lower() == clean and (perms is None or (perms.send_messages and perms.view_channel)):
+                        return self._to_cord_channel(ch)
+            # 2. Look for fuzzy/alnum match with send permissions (e.g. #general matching #💬・general)
+            import re
+            alnum = re.sub(r"[^a-z0-9]", "", clean)
+            if alnum:
+                for guild in self.client.guilds:
+                    for ch in guild.text_channels:
+                        perms = ch.permissions_for(guild.me) if guild.me else None
+                        ch_alnum = re.sub(r"[^a-z0-9]", "", ch.name.lower())
+                        if (alnum == ch_alnum or alnum in ch_alnum or alnum in ch.name.lower()) and (perms is None or (perms.send_messages and perms.view_channel)):
+                            return self._to_cord_channel(ch)
+            # 3. Fallback to any exact match
+            for guild in self.client.guilds:
+                for ch in guild.text_channels:
+                    if ch.name.lower() == clean:
+                        return self._to_cord_channel(ch)
+        return CordChannel(channel_id=0, name=clean)
+
     async def send_reply(self, ctx: ExecutionContext, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
         discord_embed = self._to_discord_embed(embed) if embed else None
         if content is None and discord_embed is None:
             content = " "
 
-        if ctx.is_interaction and isinstance(ctx.raw_event, discord.Interaction):
-            if ctx.raw_event.response.is_done():
-                await ctx.raw_event.followup.send(content=content, embed=discord_embed)
-            else:
-                await ctx.raw_event.response.send_message(content=content, embed=discord_embed)
-        elif isinstance(ctx.raw_event, discord.Message):
-            await ctx.raw_event.reply(content=content, embed=discord_embed)
-        elif ctx.channel:
-            # Fallback to channel send
-            ch = self.client.get_channel(int(ctx.channel.id))
-            if ch:
-                await ch.send(content=content, embed=discord_embed)
+        try:
+            if ctx.is_interaction and isinstance(ctx.raw_event, discord.Interaction):
+                if ctx.raw_event.response.is_done():
+                    await ctx.raw_event.followup.send(content=content, embed=discord_embed)
+                else:
+                    await ctx.raw_event.response.send_message(content=content, embed=discord_embed)
+            elif isinstance(ctx.raw_event, discord.Message):
+                await ctx.raw_event.reply(content=content, embed=discord_embed)
+            elif ctx.channel:
+                # Fallback to channel send
+                ch = self.client.get_channel(int(ctx.channel.id))
+                if ch:
+                    await ch.send(content=content, embed=discord_embed)
+        except discord.errors.Forbidden as e:
+            print(f"Warning: Failed to reply: Missing Permissions (403 Forbidden): {e}")
+        except discord.errors.HTTPException as e:
+            print(f"Warning: Failed to reply: {e}")
 
     async def send_channel_message(self, channel_ref: Any, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
         discord_embed = self._to_discord_embed(embed) if embed else None
         if content is None and discord_embed is None:
             content = " "
 
-        if hasattr(channel_ref, "id"):
+        # 1. Target with numeric channel ID
+        if hasattr(channel_ref, "id") and str(channel_ref.id) != "0":
             try:
                 ch = self.client.get_channel(int(channel_ref.id))
                 if ch:
-                    await ch.send(content=content, embed=discord_embed)
-                    return
+                    perms = ch.permissions_for(ch.guild.me) if hasattr(ch, "guild") and ch.guild and ch.guild.me else None
+                    if perms and (not perms.send_messages or not perms.view_channel):
+                        print(f"Warning: Cannot send to #{ch.name}: Bot lacks 'Send Messages' or 'View Channel' permissions in this channel.")
+                        return
+                    try:
+                        await ch.send(content=content, embed=discord_embed)
+                        return
+                    except discord.errors.Forbidden as e:
+                        print(f"Warning: Cannot send to #{ch.name}: 403 Forbidden (Missing Access): {e}")
+                        return
+                    except discord.errors.HTTPException as e:
+                        print(f"Warning: Failed to send to #{ch.name}: {e}")
+                        return
             except (ValueError, TypeError):
                 pass
 
-        target = getattr(channel_ref, "name", str(channel_ref)).lstrip("#")
+        target = getattr(channel_ref, "name", str(channel_ref)).lstrip("#").strip()
         if target.isdigit():
             ch = self.client.get_channel(int(target))
             if ch:
-                await ch.send(content=content, embed=discord_embed)
-                return
-
-        for guild in self.client.guilds:
-            for ch in guild.text_channels:
-                if ch.name.lower() == target.lower():
+                try:
                     await ch.send(content=content, embed=discord_embed)
                     return
+                except discord.errors.Forbidden as e:
+                    print(f"Warning: Cannot send to channel ID {target}: 403 Forbidden (Missing Access): {e}")
+                    return
+                except discord.errors.HTTPException as e:
+                    print(f"Warning: Failed to send to channel ID {target}: {e}")
+                    return
+
+        # 2. Search for channel in guilds
+        clean_target = target.lower()
+
+        # Pass 1: exact match with send_messages permission
+        for guild in self.client.guilds:
+            for ch in guild.text_channels:
+                perms = ch.permissions_for(guild.me) if guild.me else None
+                if ch.name.lower() == clean_target:
+                    if perms is None or (perms.send_messages and perms.view_channel):
+                        try:
+                            await ch.send(content=content, embed=discord_embed)
+                            return
+                        except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
+                            print(f"Warning: Cannot send to #{ch.name}: {e}")
+                            return
+
+        # Pass 2: normalized/fuzzy match with send_messages permission (e.g. #general matches #💬・general)
+        import re
+        clean_alnum = re.sub(r"[^a-z0-9]", "", clean_target)
+        if clean_alnum:
+            for guild in self.client.guilds:
+                for ch in guild.text_channels:
+                    perms = ch.permissions_for(guild.me) if guild.me else None
+                    if perms is None or (perms.send_messages and perms.view_channel):
+                        ch_alnum = re.sub(r"[^a-z0-9]", "", ch.name.lower())
+                        if clean_alnum == ch_alnum or clean_alnum in ch_alnum or clean_alnum in ch.name.lower():
+                            try:
+                                await ch.send(content=content, embed=discord_embed)
+                                return
+                            except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
+                                print(f"Warning: Cannot send to #{ch.name}: {e}")
+                                return
+
+        # Pass 3: Channel was found by name, but bot lacks permissions
+        for guild in self.client.guilds:
+            for ch in guild.text_channels:
+                if ch.name.lower() == clean_target:
+                    print(f"Warning: Found #{ch.name} in guild '{guild.name}', but bot lacks 'Send Messages' or 'View Channel' permissions (Missing Access).")
+                    return
+
+        print(f"Warning: Channel '#{target}' was not found in any connected guild or is not accessible.")
 
     async def delete_message(self, ctx: ExecutionContext):
         if isinstance(ctx.raw_event, discord.Message):
-            await ctx.raw_event.delete()
+            try:
+                await ctx.raw_event.delete()
+            except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
+                print(f"Warning: Could not delete message: {e}")
 
     async def wait_for_input(self, ctx: ExecutionContext, timeout: float = 60.0) -> Optional[str]:
         def check(m: discord.Message):
