@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cord Documentation — Official Guides & Language Reference</title>
+  <meta name="description" content="Comprehensive documentation, guides, API reference, and cookbook for Cord, the dedicated language for Discord bots.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container" style="max-width: 1440px;">
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <button id="docsMobileToggle" class="mobile-toggle" style="display: none; margin-right: 4px;" aria-label="Toggle navigation">☰</button>
+        <a href="index.html" class="brand">
+          <img src="assets/cord-logo.svg" alt="Cord Logo" class="brand-logo">
+          <span>Cord</span>
+          <span class="brand-badge">DOCS</span>
+        </a>
+
+        <!-- Fast Search -->
+        <div class="docs-search-box">
+          <span class="docs-search-icon">🔍</span>
+          <input type="text" id="docsSearchInput" class="docs-search-input" placeholder="Search documentation...">
+          <kbd class="docs-search-kbd">Ctrl K</kbd>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="index.html" class="btn-ghost">← Main Site</a>
+        <a href="index.html#simulator" class="btn-ghost">Live Simulator</a>
+        <a href="https://github.com/mannansainicyber-dev/cord-lang" target="_blank" rel="noopener noreferrer" class="btn-ghost">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Docs Layout Wrapper -->
+  <div class="docs-wrapper">
+
+    <!-- Left Sidebar Navigation -->
+    <aside class="docs-sidebar">
+      
+      <!-- 1. Getting Started -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">🚀 Getting Started</div>
+        <ul class="sidebar-links">
+          <li><a href="#overview" class="sidebar-link active">Overview & Vision</a></li>
+          <li><a href="#installation" class="sidebar-link">Installation</a></li>
+          <li><a href="#quickstart" class="sidebar-link">60-Second Quickstart</a></li>
+          <li><a href="#project-structure" class="sidebar-link">Project Layout & .env</a></li>
+        </ul>
+      </div>
+
+      <!-- 2. Language Fundamentals -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">🧱 Language Guide</div>
+        <ul class="sidebar-links">
+          <li><a href="#grammar-indentation" class="sidebar-link">Indentation & Syntax</a></li>
+          <li><a href="#types-literals" class="sidebar-link">Types & Durations</a></li>
+          <li><a href="#string-interpolation" class="sidebar-link">String Interpolation</a></li>
+          <li><a href="#control-flow" class="sidebar-link">Control Flow & Loops</a></li>
+          <li><a href="#functions" class="sidebar-link">User Functions (fn)</a></li>
+        </ul>
+      </div>
+
+      <!-- 3. Bot Architecture -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">⚡ Bot Core</div>
+        <ul class="sidebar-links">
+          <li><a href="#bot-config" class="sidebar-link">Bot & Config</a></li>
+          <li><a href="#dual-modality" class="sidebar-link">Dual-Modality Commands</a></li>
+          <li><a href="#command-params" class="sidebar-link">Typed Arguments</a></li>
+          <li><a href="#permissions-cooldowns" class="sidebar-link">Permissions & Cooldowns</a></li>
+          <li><a href="#events" class="sidebar-link">Events & Triggers</a></li>
+          <li><a href="#actions-embeds" class="sidebar-link">Replies & Rich Embeds</a></li>
+        </ul>
+      </div>
+
+      <!-- 4. Interactive UI Components -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">🎛️ UI Components</div>
+        <ul class="sidebar-links">
+          <li><a href="#ui-overview" class="sidebar-link">Component Architecture</a></li>
+          <li><a href="#buttons" class="sidebar-link">Buttons & Styles</a></li>
+          <li><a href="#select-menus" class="sidebar-link">Select Menus & Options</a></li>
+          <li><a href="#component-events" class="sidebar-link">Interactive Event Handlers</a></li>
+        </ul>
+      </div>
+
+      <!-- 5. Native Moderation Engine -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">🛡️ Moderation Engine</div>
+        <ul class="sidebar-links">
+          <li><a href="#moderation-overview" class="sidebar-link">Moderation Statements</a></li>
+          <li><a href="#timeout-statement" class="sidebar-link">timeout & Durations</a></li>
+          <li><a href="#ban-kick" class="sidebar-link">ban, kick & unban</a></li>
+          <li><a href="#audit-logging" class="sidebar-link">Audit Logs & Escalation</a></li>
+        </ul>
+      </div>
+
+      <!-- 6. HTTP & REST Client -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">🌐 HTTP & REST Client</div>
+        <ul class="sidebar-links">
+          <li><a href="#http-fetch" class="sidebar-link">fetch() Function</a></li>
+          <li><a href="#http-module" class="sidebar-link">http.get / post / delete</a></li>
+          <li><a href="#json-proxy" class="sidebar-link">Dot-Notation JSON Proxy</a></li>
+        </ul>
+      </div>
+
+      <!-- 7. Persistent SQLite Store -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">💾 Persistent Storage</div>
+        <ul class="sidebar-links">
+          <li><a href="#store-overview" class="sidebar-link">Embedded SQLite Store</a></li>
+          <li><a href="#store-operations" class="sidebar-link">Reading, Writing & Maps</a></li>
+          <li><a href="#store-concurrency" class="sidebar-link">Atomic Transactions</a></li>
+        </ul>
+      </div>
+
+      <!-- 8. Background Tasks -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">⏱️ Background Tasks</div>
+        <ul class="sidebar-links">
+          <li><a href="#scheduled-tasks" class="sidebar-link">task ... every Syntax</a></li>
+          <li><a href="#task-patterns" class="sidebar-link">Health Checks & Broadcasts</a></li>
+        </ul>
+      </div>
+
+      <!-- 9. Modular Imports -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">📦 Modular Imports</div>
+        <ul class="sidebar-links">
+          <li><a href="#imports" class="sidebar-link">import Statement</a></li>
+          <li><a href="#cycle-protection" class="sidebar-link">Circular Dependency Safety</a></li>
+        </ul>
+      </div>
+
+      <!-- 10. Developer Tooling -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">🛠️ Tooling & CLI</div>
+        <ul class="sidebar-links">
+          <li><a href="#cli-repl" class="sidebar-link">cord repl Shell</a></li>
+          <li><a href="#cli-check" class="sidebar-link">cord check Linter</a></li>
+          <li><a href="#cli-docker" class="sidebar-link">cord docker Generator</a></li>
+          <li><a href="#vscode-ext" class="sidebar-link">VS Code Extension</a></li>
+        </ul>
+      </div>
+
+      <!-- 11. Production Cookbook -->
+      <div class="sidebar-category">
+        <div class="sidebar-cat-title">🍳 Production Recipes</div>
+        <ul class="sidebar-links">
+          <li><a href="#recipe-roles" class="sidebar-link">Role Verification Menu</a></li>
+          <li><a href="#recipe-automod" class="sidebar-link">Automod Shield</a></li>
+          <li><a href="#recipe-crypto" class="sidebar-link">Crypto Price Tracker</a></li>
+          <li><a href="#recipe-economy" class="sidebar-link">Economy & Leaderboard</a></li>
+          <li><a href="#recipe-tickets" class="sidebar-link">Private Ticket Desk</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="docs-content">
+
+      <!-- Section: Overview -->
+      <section id="overview" class="docs-section">
+        <h1 class="docs-title">Cord Documentation</h1>
+        <p class="docs-lead">
+          Cord is a modern, domain-specific programming language engineered specifically for Discord bot development. It eliminates async boilerplate, decorator nesting, and framework overhead while providing first-class language constructs for UI components, moderation, persistent storage, and background automation.
+        </p>
+
+        <div class="callout tip">
+          <div class="callout-title">💡 Why a Dedicated Language?</div>
+          General-purpose languages (Python, JavaScript) require 40+ lines of plumbing to declare a simple button menu with interaction tokens. Cord handles Discord gateway lifecycle, interaction tokens, and intent validation natively, letting you write clean, declarative code.
+        </div>
+
+        <h2 class="docs-h2" id="vision-modes">Unified Beginner & Developer Modes</h2>
+        <p class="docs-p">
+          Cord bridges the gap between novice creators and senior software engineers:
+        </p>
+        <ul class="docs-p" style="padding-left: 20px;">
+          <li><strong>Beginner Mode:</strong> Readable English-style event triggers (<code>when someone joins:</code>), action keywords (<code>reply</code>, <code>send #welcome</code>), and clear diagnostic error messages.</li>
+          <li><strong>Developer Mode:</strong> Expressive control flow, typed parameters (<code>target: Member</code>), permission security guards, built-in SQLite persistence (<code>store</code>), async HTTP (<code>fetch</code>), and modular imports.</li>
+        </ul>
+        <p class="docs-p">
+          Both styles share the exact same grammar and tree-walking interpreter. You can mix them freely in the same <code>.cord</code> file.
+        </p>
+      </section>
+
+      <!-- Section: Installation -->
+      <section id="installation" class="docs-section">
+        <h2 class="docs-h2">Installation & Prerequisites</h2>
+        <p class="docs-p">
+          Cord requires <strong>Python 3.10 or newer</strong>. You can install Cord using <code>pip</code> or run it isolated with <code>pipx</code>:
+        </p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>Terminal</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code>pip install cord-lang</code></pre>
+        </div>
+
+        <p class="docs-p">Or install the development version directly from GitHub:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>Terminal</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code>git clone https://github.com/mannansainicyber-dev/cord-lang.git
+cd cord-lang
+pip install -e .</code></pre>
+        </div>
+
+        <p class="docs-p">Verify that the CLI is correctly installed:</p>
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>Terminal</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code>cord --version
+# Output: Cord 0.2.0 (Python 3.12.3)</code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Quickstart -->
+      <section id="quickstart" class="docs-section">
+        <h2 class="docs-h2">60-Second Quickstart</h2>
+        <p class="docs-p">
+          Cord includes a built-in project scaffolding tool that generates a production-ready starter workspace:
+        </p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>Terminal</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code>cord init my-first-bot
+cd my-first-bot</code></pre>
+        </div>
+
+        <p class="docs-p">
+          This scaffolds the following directory tree:
+        </p>
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Structure</span></div>
+          <pre class="code-block-body"><code>my-first-bot/
+├── bot.cord       # Bot source code
+├── .env.example   # Environment template
+├── .gitignore     # Git ignore patterns
+└── README.md      # Project overview</code></pre>
+        </div>
+
+        <h3 class="docs-h3">Writing Your First Bot (`bot.cord`)</h3>
+        <p class="docs-p">Open <code>bot.cord</code> and define your bot:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>bot.cord</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code><span class="kw">bot</span> <span class="str">"GreeterBot"</span>
+
+<span class="kw">config</span>:
+    prefix = <span class="str">"!"</span>
+    status = <span class="str">"online"</span>
+    activity = <span class="str">"with Cord"</span>
+
+<span class="kw">when</span> someone joins:
+    <span class="kw">send</span> <span class="chan">#welcome</span> <span class="str">"Welcome {member.mention} to our community!"</span>
+
+<span class="kw">command</span> ping:
+    <span class="kw">reply</span> <span class="str">"Pong! Latency is {bot.latency}ms"</span>
+
+<span class="kw">command</span> greet(target: Member = <span class="kw">null</span>):
+    user = target <span class="kw">or</span> author
+    <span class="kw">reply</span> <span class="str">"Hello, {user.mention}!"</span></code></pre>
+        </div>
+
+        <p class="docs-p">Launch your bot with hot reload enabled:</p>
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Terminal</span></div>
+          <pre class="code-block-body"><code>cord run bot.cord</code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Project Structure & .env -->
+      <section id="project-structure" class="docs-section">
+        <h2 class="docs-h2">Project Layout & Environment Variables</h2>
+        <p class="docs-p">
+          Cord looks for a <code>.env</code> file in your working directory to read the Discord Bot Token:
+        </p>
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>.env</span></div>
+          <pre class="code-block-body"><code>DISCORD_TOKEN=MTE5OD...your_bot_token_here</code></pre>
+        </div>
+
+        <div class="callout note">
+          <div class="callout-title">📌 Required Discord Gateway Intents</div>
+          To receive join events and prefix commands, enable the following in the <a href="https://discord.com/developers/applications" target="_blank" style="color: var(--accent-cyan);">Discord Developer Portal</a> under your Bot tab:
+          <ul style="margin-top: 8px; padding-left: 20px;">
+            <li><strong>Message Content Intent</strong> (for prefix commands)</li>
+            <li><strong>Server Members Intent</strong> (for <code>when someone joins:</code>)</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section: Grammar & Indentation -->
+      <section id="grammar-indentation" class="docs-section">
+        <h2 class="docs-h2">Indentation & Lexical Grammar</h2>
+        <p class="docs-p">
+          Cord uses the <strong>off-side rule</strong> (like Python and YAML). Blocks are defined by indenting 4 spaces.
+        </p>
+        <ul class="docs-p" style="padding-left: 20px;">
+          <li><strong>Indent Depth:</strong> Strictly 4 spaces per block level.</li>
+          <li><strong>Comments:</strong> Begin with <code>#</code> and continue to the end of the line.</li>
+          <li><strong>Channel References:</strong> Any word prefixed by <code>#</code> (e.g. <code>#welcome</code>, <code>#mod-logs</code>) is parsed as a typed channel reference.</li>
+        </ul>
+      </section>
+
+      <!-- Section: Types & Literals -->
+      <section id="types-literals" class="docs-section">
+        <h2 class="docs-h2">Types, Literals & Durations</h2>
+        <p class="docs-p">Cord supports first-class literals tailored for bot development:</p>
+
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Literal</th>
+              <th>Example</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Integer</strong></td>
+              <td><code>0</code>, <code>42</code>, <code>-10</code>, <code>1_000_000</code></td>
+              <td>Signed 64-bit integer with optional readability underscores.</td>
+            </tr>
+            <tr>
+              <td><strong>Float</strong></td>
+              <td><code>3.14</code>, <code>0.001</code></td>
+              <td>Double-precision IEEE 754 floating point numbers.</td>
+            </tr>
+            <tr>
+              <td><strong>Duration</strong></td>
+              <td><code>500ms</code>, <code>5s</code>, <code>30m</code>, <code>2h</code>, <code>7d</code></td>
+              <td>Native time spans used in timeouts, cooldowns, and tasks.</td>
+            </tr>
+            <tr>
+              <td><strong>String</strong></td>
+              <td><code>"Hello {name}"</code>, <code>'single'</code></td>
+              <td>UTF-8 text with inline expression interpolation.</td>
+            </tr>
+            <tr>
+              <td><strong>Boolean</strong></td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>Standard boolean truth values.</td>
+            </tr>
+            <tr>
+              <td><strong>Null</strong></td>
+              <td><code>null</code></td>
+              <td>Null value / empty reference.</td>
+            </tr>
+            <tr>
+              <td><strong>List</strong></td>
+              <td><code>[1, "two", 3.0]</code></td>
+              <td>Ordered heterogeneous dynamic array.</td>
+            </tr>
+            <tr>
+              <td><strong>Map</strong></td>
+              <td><code>{"coins": 100, "vip": true}</code></td>
+              <td>Key-value associative mapping.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Section: String Interpolation -->
+      <section id="string-interpolation" class="docs-section">
+        <h2 class="docs-h2">String Interpolation</h2>
+        <p class="docs-p">
+          Any valid Cord expression enclosed in curly braces <code>{...}</code> inside double quotes is evaluated in scope:
+        </p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Cord</span></div>
+          <pre class="code-block-body"><code>user_name = "Alex"
+reply "Hello {user_name}, you have {store.coins.get(author.id, 0)} coins!"</code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Control Flow -->
+      <section id="control-flow" class="docs-section">
+        <h2 class="docs-h2">Control Flow & Loops</h2>
+        <p class="docs-p">Cord supports standard structured control flow:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Conditionals</span></div>
+          <pre class="code-block-body"><code><span class="kw">if</span> score >= <span class="num">100</span>:
+    <span class="kw">reply</span> <span class="str">"🏆 Master Tier"</span>
+<span class="kw">elif</span> score >= <span class="num">50</span>:
+    <span class="kw">reply</span> <span class="str">"🥈 Silver Tier"</span>
+<span class="kw">else</span>:
+    <span class="kw">reply</span> <span class="str">"🥉 Novice"</span></code></pre>
+        </div>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Loops</span></div>
+          <pre class="code-block-body"><code><span class="kw">for</span> item <span class="kw">in</span> [<span class="str">"Alpha"</span>, <span class="str">"Beta"</span>, <span class="str">"Gamma"</span>]:
+    <span class="kw">send</span> <span class="chan">#logs</span> <span class="str">"Deploying {item}..."</span>
+
+count = <span class="num">3</span>
+<span class="kw">while</span> count > <span class="num">0</span>:
+    count -= <span class="num">1</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: User Functions -->
+      <section id="functions" class="docs-section">
+        <h2 class="docs-h2">User Functions (`fn`)</h2>
+        <p class="docs-p">Declare reusable functions with the <code>fn</code> keyword:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Functions</span></div>
+          <pre class="code-block-body"><code><span class="kw">fn</span> calculate_tax(amount, rate=<span class="num">0.05</span>):
+    <span class="kw">return</span> amount * rate
+
+<span class="kw">command</span> purchase(price: Integer):
+    tax = calculate_tax(price)
+    total = price + tax
+    <span class="kw">reply</span> <span class="str">"Total with tax: ${total}"</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Bot & Config -->
+      <section id="bot-config" class="docs-section">
+        <h2 class="docs-h2">Bot & Config Declarations</h2>
+        <p class="docs-p">Every bot begins with a <code>bot</code> declaration and optional <code>config:</code> block:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>bot.cord</span></div>
+          <pre class="code-block-body"><code><span class="kw">bot</span> <span class="str">"Sentinel"</span>
+
+<span class="kw">config</span>:
+    prefix = <span class="str">"!"</span>
+    status = <span class="str">"dnd"</span>            <span class="cmt"># online | idle | dnd | invisible</span>
+    activity = <span class="str">"over the server"</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Dual Modality -->
+      <section id="dual-modality" class="docs-section">
+        <h2 class="docs-h2">Dual-Modality Commands</h2>
+        <p class="docs-p">
+          By default, every <code>command name:</code> is registered as <strong>both a Discord Slash Command (<code>/name</code>) and a Prefix Command (<code>!name</code>)</strong>.
+        </p>
+
+        <div class="callout tip">
+          <div class="callout-title">💡 Restricting Modality</div>
+          If you want a command to only work as a slash command or only with a prefix, prepend <code>slash</code> or <code>prefix</code>:
+          <pre style="margin-top: 8px;"><code>slash command ban(target: Member): ...
+prefix command secret: ...</code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Typed Arguments -->
+      <section id="command-params" class="docs-section">
+        <h2 class="docs-h2">Typed Arguments & Signatures</h2>
+        <p class="docs-p">Cord validates command arguments automatically before invoking the body:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Signatures</span></div>
+          <pre class="code-block-body"><code><span class="kw">command</span> warn(target: Member, reason: String = <span class="str">"No reason"</span>, severity: Integer = <span class="num">1</span>):
+    <span class="kw">reply</span> <span class="str">"Warned {target.name} for '{reason}' (Level {severity})"</span></code></pre>
+        </div>
+
+        <p class="docs-p">Supported type annotations:</p>
+        <ul class="docs-p" style="padding-left: 20px;">
+          <li><code>Member</code>: Guild member (resolves from mention, username, or ID).</li>
+          <li><code>User</code>: Discord user account.</li>
+          <li><code>Channel</code>: Text or voice channel reference.</li>
+          <li><code>String</code>: Text string.</li>
+          <li><code>Integer</code>: Integer number.</li>
+          <li><code>Float</code>: Floating-point decimal.</li>
+          <li><code>Duration</code>: Natural duration (e.g. <code>10m</code>, <code>2h</code>).</li>
+        </ul>
+      </section>
+
+      <!-- Section: Permissions & Cooldowns -->
+      <section id="permissions-cooldowns" class="docs-section">
+        <h2 class="docs-h2">Declarative Permissions & Cooldowns</h2>
+        <p class="docs-p">Protect sensitive commands declaratively without nested `if` statements:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Guards</span></div>
+          <pre class="code-block-body"><code><span class="kw">command</span> purge(count: Integer = <span class="num">10</span>):
+    <span class="kw">require</span> <span class="kw">permission</span> manage_messages
+    <span class="kw">cooldown</span> <span class="num">10s</span> <span class="kw">per</span> guild
+    <span class="cmt"># Purge logic here</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Events & Triggers -->
+      <section id="events" class="docs-section">
+        <h2 class="docs-h2">Events & Triggers</h2>
+        <p class="docs-p">Cord features human-readable event phrases:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Events</span></div>
+          <pre class="code-block-body"><code><span class="kw">when</span> someone joins:
+    <span class="kw">send</span> <span class="chan">#welcome</span> <span class="str">"👋 Welcome {member.mention}!"</span>
+
+<span class="kw">when</span> someone leaves:
+    <span class="kw">send</span> <span class="chan">#logs</span> <span class="str">"Goodbye {member.name}."</span>
+
+<span class="kw">when</span> someone sends a message:
+    <span class="kw">if</span> <span class="str">"badword"</span> <span class="kw">in</span> message.content:
+        <span class="kw">delete</span> message
+        <span class="kw">reply</span> <span class="str">"⚠️ Please mind your language, {author.mention}."</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Replies & Rich Embeds -->
+      <section id="actions-embeds" class="docs-section">
+        <h2 class="docs-h2">Replies & Declarative Embeds</h2>
+        <p class="docs-p">Construct rich embeds using clean indentation instead of dictionary objects:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Embeds</span></div>
+          <pre class="code-block-body"><code><span class="kw">command</span> profile:
+    <span class="kw">reply</span> <span class="kw">embed</span>:
+        title <span class="str">"User Profile: {author.name}"</span>
+        description <span class="str">"Community veteran & code contributor."</span>
+        color <span class="str">"#5865F2"</span>
+        thumbnail author.avatar_url
+        field <span class="str">"Joined Server"</span> author.joined_at inline=<span class="kw">true</span>
+        field <span class="str">"Roles"</span> len(author.roles) inline=<span class="kw">true</span>
+        footer <span class="str">"Cord Language Engine"</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: UI Components Architecture -->
+      <section id="ui-overview" class="docs-section">
+        <h2 class="docs-h2">Interactive UI Components</h2>
+        <p class="docs-p">
+          Buttons and Select Menus are declared directly inside a <code>with:</code> block attached to any <code>reply</code> or <code>send</code> statement.
+        </p>
+
+        <div class="callout tip">
+          <div class="callout-title">💡 Zero Subclassing</div>
+          You never write custom <code>discord.ui.View</code> subclasses. Cord binds component custom IDs directly to top-level event handlers.
+        </div>
+      </section>
+
+      <!-- Section: Buttons & Styles -->
+      <section id="buttons" class="docs-section">
+        <h2 class="docs-h2">Buttons & Button Styles</h2>
+        <p class="docs-p">Buttons are declared using <code>button "&lt;id&gt;":</code>:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Buttons</span></div>
+          <pre class="code-block-body"><code><span class="kw">reply</span> <span class="str">"Portal options:"</span> <span class="kw">with</span>:
+    <span class="kw">button</span> <span class="str">"btn_verify"</span>:
+        label <span class="str">"Verify Member"</span>
+        style <span class="str">"success"</span>
+        emoji <span class="str">"✅"</span>
+    <span class="kw">button</span> <span class="str">"btn_delete"</span>:
+        label <span class="str">"Delete Ticket"</span>
+        style <span class="str">"danger"</span>
+        emoji <span class="str">"🗑️"</span>
+    <span class="kw">button</span> <span class="str">"btn_docs"</span>:
+        label <span class="str">"Open Docs"</span>
+        style <span class="str">"link"</span>
+        url <span class="str">"https://cord-lang.org"</span></code></pre>
+        </div>
+
+        <p class="docs-p">Supported button styles:</p>
+        <ul class="docs-p" style="padding-left: 20px;">
+          <li><code>"primary"</code>: Blurple standard action button</li>
+          <li><code>"secondary"</code>: Neutral grey button</li>
+          <li><code>"success"</code>: Green confirmation button</li>
+          <li><code>"danger"</code>: Red destructive button</li>
+          <li><code>"link"</code>: External URL redirect button</li>
+        </ul>
+      </section>
+
+      <!-- Section: Select Menus -->
+      <section id="select-menus" class="docs-section">
+        <h2 class="docs-h2">Select Menus (Dropdowns)</h2>
+        <p class="docs-p">Dropdowns are declared using <code>select "&lt;id&gt;":</code>:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Select Menus</span></div>
+          <pre class="code-block-body"><code><span class="kw">reply</span> <span class="str">"Pick specialization:"</span> <span class="kw">with</span>:
+    <span class="kw">select</span> <span class="str">"role_dropdown"</span>:
+        placeholder <span class="str">"Choose your role..."</span>
+        min_values <span class="num">1</span>
+        max_values <span class="num">1</span>
+        <span class="kw">option</span> <span class="str">"engineer"</span>:
+            label <span class="str">"Software Engineer"</span>
+            description <span class="str">"Builds backend systems"</span>
+            emoji <span class="str">"💻"</span>
+        <span class="kw">option</span> <span class="str">"designer"</span>:
+            label <span class="str">"UI/UX Designer"</span>
+            description <span class="str">"Designs client interfaces"</span>
+            emoji <span class="str">"🎨"</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Component Event Handlers -->
+      <section id="component-events" class="docs-section">
+        <h2 class="docs-h2">Component Event Handlers</h2>
+        <p class="docs-p">Handle user clicks and choices with top-level event handlers:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Component Handlers</span></div>
+          <pre class="code-block-body"><code><span class="kw">when</span> <span class="kw">button</span> <span class="str">"btn_verify"</span> <span class="kw">is clicked</span>:
+    author.add_role(<span class="str">"Verified"</span>)
+    <span class="kw">reply</span> <span class="str">"✅ Verification complete for {author.mention}!"</span>
+
+<span class="kw">when</span> <span class="kw">select</span> <span class="str">"role_dropdown"</span> <span class="kw">is chosen</span>:
+    author.set_role(selected)
+    <span class="kw">reply</span> <span class="str">"Updated specialization to **{selected}**!"</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Moderation Overview -->
+      <section id="moderation-overview" class="docs-section">
+        <h2 class="docs-h2">Native Moderation Primitives</h2>
+        <p class="docs-p">
+          Cord provides dedicated, first-class language statements for server moderation actions: <code>ban</code>, <code>kick</code>, <code>timeout</code>, and <code>unban</code>.
+        </p>
+      </section>
+
+      <!-- Section: timeout -->
+      <section id="timeout-statement" class="docs-section">
+        <h2 class="docs-h2">The `timeout` Statement</h2>
+        <p class="docs-p">Applies a communication timeout to a member using natural duration syntax:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>timeout</span></div>
+          <pre class="code-block-body"><code><span class="kw">command</span> mute(target: Member, duration: Duration = <span class="num">10m</span>, reason = <span class="str">"Rule violation"</span>):
+    <span class="kw">require</span> <span class="kw">permission</span> moderate_members
+    <span class="fn">timeout</span> target <span class="kw">for</span> duration reason=reason
+    <span class="kw">reply</span> <span class="str">"🔇 Timed out {target.name} for {duration}."</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: ban & kick -->
+      <section id="ban-kick" class="docs-section">
+        <h2 class="docs-h2">The `ban`, `kick`, and `unban` Statements</h2>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Moderation</span></div>
+          <pre class="code-block-body"><code><span class="kw">command</span> banish(target: Member, reason: String = <span class="str">"Severe violation"</span>):
+    <span class="kw">require</span> <span class="kw">permission</span> ban_members
+    <span class="fn">ban</span> target reason=reason
+    <span class="kw">reply</span> <span class="str">"🔨 Banned **{target.name}**."</span>
+
+<span class="kw">command</span> pardon(user_id: String, reason: String = <span class="str">"Appeal granted"</span>):
+    <span class="kw">require</span> <span class="kw">permission</span> ban_members
+    <span class="fn">unban</span> user_id reason=reason
+    <span class="kw">reply</span> <span class="str">"🕊️ Unbanned {user_id}."</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Audit Logging & Escalation -->
+      <section id="audit-logging" class="docs-section">
+        <h2 class="docs-h2">Audit Logs & Moderation Escalation</h2>
+        <p class="docs-p">
+          All moderation statements automatically register the given <code>reason</code> in the official Discord Server Audit Log.
+        </p>
+      </section>
+
+      <!-- Section: HTTP & fetch -->
+      <section id="http-fetch" class="docs-section">
+        <h2 class="docs-h2">The `fetch()` Built-in Function</h2>
+        <p class="docs-p">
+          Cord embeds an asynchronous HTTP client directly into the runtime. No <code>aiohttp</code> or <code>requests</code> packages required.
+        </p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>fetch</span></div>
+          <pre class="code-block-body"><code><span class="kw">command</span> quote:
+    res = <span class="fn">fetch</span>(<span class="str">"https://dummyjson.com/quotes/random"</span>)
+    <span class="kw">if</span> res.ok:
+        <span class="kw">reply</span> <span class="str">"\"{res.quote}\" — **{res.author}**"</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: http module -->
+      <section id="http-module" class="docs-section">
+        <h2 class="docs-h2">The `http` REST Client Namespace</h2>
+        <p class="docs-p">For complete REST workflows:</p>
+        <ul class="docs-p" style="padding-left: 20px;">
+          <li><code>http.get(url, [headers], [params])</code></li>
+          <li><code>http.post(url, [json], [headers])</code></li>
+          <li><code>http.delete(url, [headers])</code></li>
+        </ul>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>POST Request</span></div>
+          <pre class="code-block-body"><code>payload = {<span class="str">"event"</span>: <span class="str">"login"</span>, <span class="str">"user"</span>: author.name}
+res = <span class="fn">http.post</span>(<span class="str">"https://my-api.internal/events"</span>, json=payload)</code></pre>
+        </div>
+      </section>
+
+      <!-- Section: JSON Dot-Notation -->
+      <section id="json-proxy" class="docs-section">
+        <h2 class="docs-h2">Dot-Notation JSON Proxy</h2>
+        <p class="docs-p">
+          Returned JSON maps allow intuitive dot notation directly on the response object:
+        </p>
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Dot Notation</span></div>
+          <pre class="code-block-body"><code>res = <span class="fn">fetch</span>(<span class="str">"https://api.github.com/repos/mannansainicyber-dev/cord-lang"</span>)
+<span class="kw">reply</span> <span class="str">"Stars: {res.stargazers_count} | Forks: {res.forks_count}"</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Persistent SQLite Store -->
+      <section id="store-overview" class="docs-section">
+        <h2 class="docs-h2">Zero-Config Persistent SQLite Store</h2>
+        <p class="docs-p">
+          Every Cord bot includes an embedded, persistent SQLite document and key-value store accessible via the <code>store</code> keyword. Data persists across bot restarts in <code>.cord_store.db</code> without any database configuration.
+        </p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>store</span></div>
+          <pre class="code-block-body"><code><span class="cmt"># Store a value</span>
+store.balances[author.id] = (store.balances.get(author.id, <span class="num">0</span>)) + <span class="num">100</span>
+
+<span class="cmt"># Retrieve with fallback</span>
+coins = store.balances.get(author.id, <span class="num">0</span>)</code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Store Operations -->
+      <section id="store-operations" class="docs-section">
+        <h2 class="docs-h2">Store Operations & Dictionaries</h2>
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Operation</th>
+              <th>Syntax</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Read Key</strong></td>
+              <td><code>store.key</code> or <code>store.get("key", default)</code></td>
+              <td>Retrieves stored value with optional fallback.</td>
+            </tr>
+            <tr>
+              <td><strong>Write Key</strong></td>
+              <td><code>store.key = value</code></td>
+              <td>Persists value atomically to SQLite.</td>
+            </tr>
+            <tr>
+              <td><strong>Check Key</strong></td>
+              <td><code>store.has("key")</code></td>
+              <td>Returns <code>true</code> if key exists in store.</td>
+            </tr>
+            <tr>
+              <td><strong>Delete Key</strong></td>
+              <td><code>store.delete("key")</code></td>
+              <td>Removes key from store.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Section: Scheduled Tasks -->
+      <section id="scheduled-tasks" class="docs-section">
+        <h2 class="docs-h2">Background Scheduled Tasks</h2>
+        <p class="docs-p">Automate recurring tasks without asyncio loops or cron daemons:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Tasks</span></div>
+          <pre class="code-block-body"><code><span class="kw">task</span> health_monitor <span class="kw">every</span> <span class="num">15m</span>:
+    res = <span class="fn">http.get</span>(<span class="str">"https://api.internal/health"</span>)
+    <span class="kw">if</span> <span class="kw">not</span> res.ok:
+        <span class="kw">send</span> <span class="chan">#dev-alerts</span> <span class="str">"🚨 Health check failed! HTTP {res.status}"</span></code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Modular Imports -->
+      <section id="imports" class="docs-section">
+        <h2 class="docs-h2">Multi-File Modular Imports</h2>
+        <p class="docs-p">Split large bots into maintainable modules:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>bot.cord</span></div>
+          <pre class="code-block-body"><code><span class="kw">import</span> <span class="str">"./modules/moderation.cord"</span>
+<span class="kw">import</span> <span class="str">"./modules/economy.cord"</span>
+<span class="kw">import</span> <span class="str">"./utils/helpers.cord"</span></code></pre>
+        </div>
+
+        <div class="callout note">
+          <div class="callout-title">🛡️ Cycle Protection</div>
+          Cord tracks imported modules during resolution and prevents circular import deadlocks automatically.
+        </div>
+      </section>
+
+      <!-- Section: Developer Tooling -->
+      <section id="cli-repl" class="docs-section">
+        <h2 class="docs-h2">Interactive REPL Shell: `cord repl`</h2>
+        <p class="docs-p">
+          Start an interactive read-eval-print loop to test expressions, built-ins, and AST evaluation:
+        </p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Terminal</span></div>
+          <pre class="code-block-body"><code>cord repl
+cord > format_coins = fn(x): return "${x:,}"
+cord > format_coins(50000)
+"$50,000"</code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Linter -->
+      <section id="cli-check" class="docs-section">
+        <h2 class="docs-h2">Offline Static Linter: `cord check`</h2>
+        <p class="docs-p">Validate code syntax and indentation before gateway connection:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Terminal</span></div>
+          <pre class="code-block-body"><code>cord check bot.cord
+# Output: ✓ Success: No syntax or type errors found in 42 lines.</code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Docker Generator -->
+      <section id="cli-docker" class="docs-section">
+        <h2 class="docs-h2">Production Containerization: `cord docker`</h2>
+        <p class="docs-p">Generate multi-stage Dockerfiles and docker-compose configurations in one command:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>Terminal</span></div>
+          <pre class="code-block-body"><code>cord docker --compose
+docker compose up -d</code></pre>
+        </div>
+      </section>
+
+      <!-- Section: Production Recipes -->
+      <section id="recipe-roles" class="docs-section">
+        <h2 class="docs-h2">Production Recipe 1: Role Verification Menu</h2>
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>roles.cord</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code><span class="kw">bot</span> <span class="str">"Gatekeeper"</span>
+
+<span class="kw">command</span> setup_menu:
+    <span class="kw">require</span> <span class="kw">permission</span> administrator
+    <span class="kw">reply</span> <span class="str">"Server Onboarding"</span> <span class="kw">with</span>:
+        <span class="kw">button</span> <span class="str">"verify_btn"</span>:
+            label <span class="str">"Verify Account"</span>
+            style <span class="str">"success"</span>
+            emoji <span class="str">"✅"</span>
+        <span class="kw">select</span> <span class="str">"role_pick"</span>:
+            placeholder <span class="str">"Choose your role..."</span>
+            <span class="kw">option</span> <span class="str">"coder"</span>: label <span class="str">"Developer"</span> emoji <span class="str">"💻"</span>
+            <span class="kw">option</span> <span class="str">"designer"</span>: label <span class="str">"Designer"</span> emoji <span class="str">"🎨"</span>
+
+<span class="kw">when</span> <span class="kw">button</span> <span class="str">"verify_btn"</span> <span class="kw">is clicked</span>:
+    author.add_role(<span class="str">"Verified"</span>)
+    <span class="kw">reply</span> <span class="str">"Welcome {author.name}!"</span>
+
+<span class="kw">when</span> <span class="kw">select</span> <span class="str">"role_pick"</span> <span class="kw">is chosen</span>:
+    author.set_role(selected)
+    <span class="kw">reply</span> <span class="str">"Assigned role {selected}!"</span></code></pre>
+        </div>
+      </section>
+
+      <section id="recipe-automod" class="docs-section">
+        <h2 class="docs-h2">Production Recipe 2: Moderation Automod Shield</h2>
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>automod.cord</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code><span class="kw">bot</span> <span class="str">"Shield"</span>
+
+<span class="kw">when</span> someone sends a message:
+    <span class="kw">if</span> <span class="str">"discord.gg/"</span> <span class="kw">in</span> message.content:
+        <span class="kw">delete</span> message
+        store.warns[author.id] = (store.warns[author.id] <span class="kw">or</span> <span class="num">0</span>) + <span class="num">1</span>
+        warns = store.warns[author.id]
+
+        <span class="kw">if</span> warns >= <span class="num">3</span>:
+            <span class="fn">timeout</span> author <span class="kw">for</span> <span class="num">1h</span> reason=<span class="str">"3+ invite link warnings"</span>
+            <span class="kw">send</span> <span class="chan">#mod-logs</span> <span class="str">"Timed out {author.name} for 1 hour."</span>
+        <span class="kw">else</span>:
+            <span class="kw">reply</span> <span class="str">"⚠️ Warning {warns}/3: Discord invites are forbidden."</span></code></pre>
+        </div>
+      </section>
+
+      <section id="recipe-crypto" class="docs-section">
+        <h2 class="docs-h2">Production Recipe 3: REST API Crypto Price Tracker</h2>
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>crypto.cord</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code><span class="kw">bot</span> <span class="str">"Crypto"</span>
+
+<span class="kw">command</span> btc:
+    res = <span class="fn">fetch</span>(<span class="str">"https://api.coindesk.com/v1/bpi/currentprice.json"</span>)
+    <span class="kw">if</span> res.ok:
+        <span class="kw">reply</span> <span class="str">"💰 1 BTC = **\${res.bpi.USD.rate}** USD"</span></code></pre>
+        </div>
+      </section>
+
+      <section id="recipe-economy" class="docs-section">
+        <h2 class="docs-h2">Production Recipe 4: Server Economy & Daily Claims</h2>
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>economy.cord</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code><span class="kw">bot</span> <span class="str">"Vault"</span>
+
+<span class="kw">command</span> daily:
+    <span class="kw">cooldown</span> <span class="num">24h</span> <span class="kw">per</span> user
+    store.wallet[author.id] = (store.wallet.get(author.id, <span class="num">0</span>)) + <span class="num">200</span>
+    <span class="kw">reply</span> <span class="str">"💰 Claimed 200 gold! Balance: {store.wallet[author.id]}"</span>
+
+<span class="kw">command</span> balance(target: Member = <span class="kw">null</span>):
+    user = target <span class="kw">or</span> author
+    gold = store.wallet.get(user.id, <span class="num">0</span>)
+    <span class="kw">reply</span> <span class="str">"💳 {user.name} has **{gold} gold**."</span></code></pre>
+        </div>
+      </section>
+
+      <section id="recipe-tickets" class="docs-section">
+        <h2 class="docs-h2">Production Recipe 5: Private Ticket Support Desk</h2>
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>tickets.cord</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code><span class="kw">bot</span> <span class="str">"TicketBot"</span>
+
+<span class="kw">command</span> ticket_panel:
+    <span class="kw">reply</span> <span class="str">"Need help? Open a private ticket:"</span> <span class="kw">with</span>:
+        <span class="kw">button</span> <span class="str">"open_ticket"</span>:
+            label <span class="str">"Open Support Ticket"</span>
+            style <span class="str">"primary"</span>
+            emoji <span class="str">"🎫"</span>
+
+<span class="kw">when</span> <span class="kw">button</span> <span class="str">"open_ticket"</span> <span class="kw">is clicked</span>:
+    num = (store.ticket_seq <span class="kw">or</span> <span class="num">100</span>) + <span class="num">1</span>
+    store.ticket_seq = num
+    <span class="kw">send</span> <span class="chan">#mod-queue</span> <span class="str">"New ticket #{num} opened by {author.name}"</span>
+    <span class="kw">reply</span> <span class="str">"🎫 Created ticket #{num}!"</span></code></pre>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Right Sidebar Table of Contents -->
+    <aside class="docs-toc">
+      <div class="toc-title">On This Page</div>
+      <ul class="toc-list">
+        <li><a href="#overview" class="toc-link active">Overview</a></li>
+        <li><a href="#installation" class="toc-link">Installation</a></li>
+        <li><a href="#quickstart" class="toc-link">60-Second Quickstart</a></li>
+        <li><a href="#types-literals" class="toc-link">Types & Durations</a></li>
+        <li><a href="#dual-modality" class="toc-link">Dual-Modality Commands</a></li>
+        <li><a href="#ui-overview" class="toc-link">Interactive UI Components</a></li>
+        <li><a href="#moderation-overview" class="toc-link">Moderation Primitives</a></li>
+        <li><a href="#http-fetch" class="toc-link">HTTP & REST APIs</a></li>
+        <li><a href="#store-overview" class="toc-link">Persistent SQLite Store</a></li>
+        <li><a href="#scheduled-tasks" class="toc-link">Scheduled Tasks</a></li>
+        <li><a href="#imports" class="toc-link">Modular Imports</a></li>
+        <li><a href="#cli-repl" class="toc-link">Developer Tooling</a></li>
+        <li><a href="#recipe-roles" class="toc-link">Production Recipes</a></li>
+      </ul>
+    </aside>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="docs.js"></script>
+</body>
+</html>
