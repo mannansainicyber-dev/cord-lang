@@ -40,6 +40,10 @@ class BaseDiscordAdapter:
         self.registered_tasks: Dict[str, TaskDecl] = {}
 
     @property
+    def bot(self) -> Any:
+        return self
+
+    @property
     def latency(self) -> int:
         return 0
 
@@ -95,6 +99,10 @@ class MockDiscordAdapter(BaseDiscordAdapter):
         self.mock_members["testuser"] = default_author
         self.mock_channels["general"] = default_channel
         self.mock_channels["welcome"] = CordChannel(channel_id=102, name="welcome")
+
+    @property
+    def bot(self) -> Any:
+        return self
 
     @property
     def latency(self) -> int:
@@ -397,6 +405,10 @@ class DiscordAdapter(BaseDiscordAdapter):
         super().apply_config(key, value)
         if key == "prefix" and hasattr(self, "client") and self.client:
             self.client.command_prefix = self.prefix
+
+    @property
+    def bot(self) -> Any:
+        return self
 
     @property
     def latency(self) -> int:

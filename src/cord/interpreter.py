@@ -113,10 +113,12 @@ class Interpreter:
     async def execute_event(
         self,
         event_name: str,
-        ctx: ExecutionContext,
+        ctx: Any,
         event_args: Optional[Dict[str, Any]] = None
     ):
         """Executes all registered event handlers for an event."""
+        if not isinstance(ctx, ExecutionContext):
+            ctx = ExecutionContext(bot_adapter=ctx)
         event_args = event_args or {}
         handlers = self.events.get(event_name, [])
         for handler in handlers:
@@ -511,8 +513,9 @@ class Interpreter:
 
         elif isinstance(expr, ChannelRef):
             # Returns channel name or resolved channel from ctx
-            if ctx and ctx.bot:
-                resolved = ctx.bot.resolve_channel(expr.channel_name)
+            bot_adapter = getattr(ctx, "bot", ctx) if ctx else None
+            if bot_adapter and hasattr(bot_adapter, "resolve_channel"):
+                resolved = bot_adapter.resolve_channel(expr.channel_name)
                 if resolved:
                     return resolved
             return expr.channel_name
