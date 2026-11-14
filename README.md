@@ -47,19 +47,27 @@ Both styles belong to the **same unified grammar and runtime**. You can mix them
 
 Cord requires **Python 3.10+**.
 
+### Method 1: Clone & Local Pip Install (Recommended)
+
 ```bash
 # Clone the repository
 git clone https://github.com/mannansainicyber-dev/cord-lang.git
 cd cord-lang
 
-# Install editable package
+# Install in editable mode
 pip install -e .
+```
+
+### Method 2: Direct Pip from Git URL
+
+```bash
+pip install git+https://github.com/mannansainicyber-dev/cord-lang.git
 ```
 
 Verify installation:
 ```bash
 cord --version
-# Output: Cord 0.1.0 (Python 3.14.4)
+# Output: Cord 0.2.0 (Python 3.12+)
 ```
 
 ---

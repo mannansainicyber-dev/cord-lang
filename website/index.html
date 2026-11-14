@@ -72,11 +72,11 @@
 
       <div class="hero-cta-group">
         <!-- Terminal Install Card -->
-        <div class="install-card">
+        <div class="install-card" style="max-width: 660px;">
           <div class="install-header">
             <div class="install-tabs">
-              <button class="install-tab active" data-cmd="pip">pip</button>
-              <button class="install-tab" data-cmd="pipx">pipx</button>
+              <button class="install-tab active" data-cmd="git">git clone</button>
+              <button class="install-tab" data-cmd="pip">pip (git url)</button>
               <button class="install-tab" data-cmd="docker">docker</button>
             </div>
             <button class="btn-copy" data-copy-target="installCmdText" title="Copy to clipboard">
@@ -90,7 +90,7 @@
           <div class="install-body">
             <div class="install-cmd">
               <span class="prompt-symbol">$</span>
-              <code id="installCmdText">pip install cord-lang</code>
+              <code id="installCmdText">git clone https://github.com/mannansainicyber-dev/cord-lang.git &amp;&amp; cd cord-lang &amp;&amp; pip install -e .</code>
             </div>
           </div>
         </div>
@@ -650,10 +650,10 @@ bot.run(TOKEN)</code></pre>
         <!-- Step 1 -->
         <div class="step-card">
           <div class="step-number">STEP 01</div>
-          <h3 class="step-title">Install Cord</h3>
-          <p class="step-desc">Install the language CLI and runtime from PyPI using pip or pipx:</p>
+          <h3 class="step-title">Clone &amp; Install</h3>
+          <p class="step-desc">Clone the repository and install locally using pip editable mode:</p>
           <div class="bento-code-snippet">
-            <code>pip install cord-lang</code>
+            <code>git clone https://github.com/mannansainicyber-dev/cord-lang.git<br>cd cord-lang &amp;&amp; pip install -e .</code>
           </div>
         </div>
 
@@ -712,7 +712,7 @@ bot.run(TOKEN)</code></pre>
           <ul class="footer-links">
             <li><a href="https://github.com/mannansainicyber-dev/cord-lang/tree/main/examples" target="_blank" rel="noopener noreferrer">Example Bots</a></li>
             <li><a href="https://github.com/mannansainicyber-dev/cord-lang/tree/main/editors" target="_blank" rel="noopener noreferrer">VS Code Extension</a></li>
-            <li><a href="https://pypi.org/project/cord-lang/" target="_blank" rel="noopener noreferrer">PyPI Package</a></li>
+            <li><a href="https://github.com/mannansainicyber-dev/cord-lang/releases" target="_blank" rel="noopener noreferrer">Source Releases</a></li>
             <li><a href="https://discord.com/developers/docs/intro" target="_blank" rel="noopener noreferrer">Discord Gateway Docs</a></li>
           </ul>
         </div>

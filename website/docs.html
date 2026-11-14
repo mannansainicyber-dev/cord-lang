@@ -206,20 +206,13 @@
 
       <!-- Section: Installation -->
       <section id="installation" class="docs-section">
-        <h2 class="docs-h2">Installation & Prerequisites</h2>
+        <h2 class="docs-h2">Installation & Setup</h2>
         <p class="docs-p">
-          Cord requires <strong>Python 3.10 or newer</strong>. You can install Cord using <code>pip</code> or run it isolated with <code>pipx</code>:
+          Cord requires <strong>Python 3.10 or newer</strong>. While preparing for the official PyPI index release, Cord is installed directly from the GitHub source repository using Git and local editable pip:
         </p>
 
-        <div class="code-block-wrapper">
-          <div class="code-block-header">
-            <span>Terminal</span>
-            <button class="btn-copy code-copy-btn">Copy</button>
-          </div>
-          <pre class="code-block-body"><code>pip install cord-lang</code></pre>
-        </div>
-
-        <p class="docs-p">Or install the development version directly from GitHub:</p>
+        <h3 class="docs-h3">Method 1: Clone &amp; Local Pip Install (Recommended)</h3>
+        <p class="docs-p">Clone the repository and install in editable mode so your <code>cord</code> CLI runs directly from source:</p>
 
         <div class="code-block-wrapper">
           <div class="code-block-header">
@@ -231,14 +224,26 @@ cd cord-lang
 pip install -e .</code></pre>
         </div>
 
-        <p class="docs-p">Verify that the CLI is correctly installed:</p>
+        <h3 class="docs-h3">Method 2: One-Step Pip from Git URL</h3>
+        <p class="docs-p">Alternatively, install directly using pip without manual directory navigation:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>Terminal</span>
+            <button class="btn-copy code-copy-btn">Copy</button>
+          </div>
+          <pre class="code-block-body"><code>pip install git+https://github.com/mannansainicyber-dev/cord-lang.git</code></pre>
+        </div>
+
+        <h3 class="docs-h3">Verify Installation</h3>
+        <p class="docs-p">Verify that the <code>cord</code> CLI executable is available in your PATH:</p>
         <div class="code-block-wrapper">
           <div class="code-block-header">
             <span>Terminal</span>
             <button class="btn-copy code-copy-btn">Copy</button>
           </div>
           <pre class="code-block-body"><code>cord --version
-# Output: Cord 0.2.0 (Python 3.12.3)</code></pre>
+# Output: Cord 0.2.0 (Python 3.12+)</code></pre>
         </div>
       </section>
 

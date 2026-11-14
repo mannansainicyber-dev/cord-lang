@@ -20,8 +20,8 @@ function initInstallTabs() {
   const cmdText = document.getElementById('installCmdText');
 
   const commands = {
-    pip: 'pip install cord-lang',
-    pipx: 'pipx run cord-lang init my-bot',
+    git: 'git clone https://github.com/mannansainicyber-dev/cord-lang.git && cd cord-lang && pip install -e .',
+    pip: 'pip install git+https://github.com/mannansainicyber-dev/cord-lang.git',
     docker: 'docker run -it --rm -v $(pwd):/app cord-lang run bot.cord'
   };
 

@@ -15,12 +15,12 @@ Cord runs on Linux, macOS, and Windows with Python 3.10 or higher.
 
 ## 1. Installation
 
-### From Source (Recommended)
+### Method A: Clone & Local Pip Install (Recommended)
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/cord.git
-   cd cord
+   git clone https://github.com/mannansainicyber-dev/cord-lang.git
+   cd cord-lang
    ```
 
 2. **(Optional) Create and activate a virtual environment:**
@@ -29,10 +29,16 @@ Cord runs on Linux, macOS, and Windows with Python 3.10 or higher.
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
-3. **Install the package and CLI:**
+3. **Install the package and CLI in editable mode:**
    ```bash
    pip install -e .
    ```
+
+### Method B: Install Directly from Git URL
+
+```bash
+pip install git+https://github.com/mannansainicyber-dev/cord-lang.git
+```
 
 4. **Verify the installation:**
    ```bash
@@ -40,7 +46,7 @@ Cord runs on Linux, macOS, and Windows with Python 3.10 or higher.
    ```
    Output should resemble:
    ```text
-   Cord 0.1.0 (Python 3.14.4)
+   Cord 0.2.0 (Python 3.12+)
    ```
 
 ---
