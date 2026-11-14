@@ -2,6 +2,8 @@
 Runtime environment, scopes, built-in types, and Discord entity proxies for Cord.
 """
 
+import asyncio
+import json
 from typing import Any, Dict, List, Optional, Callable
 
 
@@ -362,6 +364,129 @@ class ExecutionContext:
         return None
 
 
+class CordHttpResponse:
+    """HTTP response wrapper for native fetch / http operations."""
+
+    def __init__(self, status: int, text: str, headers: Dict[str, str], url: str):
+        self.status = status
+        self.ok = 200 <= status < 300
+        self.text = text
+        self.headers = headers
+        self.url = url
+        self._parsed_json = None
+        self._has_parsed = False
+
+    @property
+    def data(self) -> Any:
+        if not self._has_parsed:
+            try:
+                self._parsed_json = json.loads(self.text)
+            except Exception:
+                self._parsed_json = None
+            self._has_parsed = True
+        return self._parsed_json
+
+    def json(self) -> Any:
+        return self.data
+
+    def __getitem__(self, item: Any) -> Any:
+        d = self.data
+        if isinstance(d, (dict, list)):
+            return d[item]
+        raise KeyError(item)
+
+    def __getattr__(self, name: str) -> Any:
+        d = self.data
+        if isinstance(d, dict) and name in d:
+            return d[name]
+        raise AttributeError(f"'CordHttpResponse' object has no attribute '{name}'")
+
+    def __repr__(self) -> str:
+        return f"<HttpResponse status={self.status} ok={self.ok}>"
+
+    def __str__(self) -> str:
+        return self.text
+
+
+def _sync_http_request(
+    url: str,
+    method: str = "GET",
+    headers: Optional[Dict[str, str]] = None,
+    body: Optional[bytes] = None,
+    timeout: float = 30.0
+) -> CordHttpResponse:
+    import urllib.request
+    import urllib.error
+
+    req_headers = {
+        "User-Agent": "Cord-Lang/0.2.0 (Discord Bot Language)"
+    }
+    if headers:
+        req_headers.update(headers)
+
+    req = urllib.request.Request(url, data=body, headers=req_headers, method=method.upper())
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            status = resp.status
+            resp_headers = dict(resp.headers)
+            resp_body = resp.read().decode("utf-8", errors="replace")
+            return CordHttpResponse(status=status, text=resp_body, headers=resp_headers, url=url)
+    except urllib.error.HTTPError as e:
+        resp_body = e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else str(e)
+        resp_headers = dict(e.headers) if hasattr(e, "headers") else {}
+        return CordHttpResponse(status=e.code, text=resp_body, headers=resp_headers, url=url)
+    except Exception as e:
+        return CordHttpResponse(status=0, text=str(e), headers={}, url=url)
+
+
+async def cord_fetch(
+    url: str,
+    method: str = "GET",
+    headers: Optional[Dict[str, str]] = None,
+    json_data: Any = None,
+    timeout: float = 30.0,
+    **kwargs
+) -> CordHttpResponse:
+    """Native non-blocking HTTP fetch function."""
+    body_bytes = None
+    hdrs = dict(headers) if headers else {}
+    if json_data is not None:
+        body_bytes = json.dumps(json_data).encode("utf-8")
+        if "Content-Type" not in hdrs and "content-type" not in hdrs:
+            hdrs["Content-Type"] = "application/json"
+    elif "json" in kwargs:
+        body_bytes = json.dumps(kwargs["json"]).encode("utf-8")
+        if "Content-Type" not in hdrs and "content-type" not in hdrs:
+            hdrs["Content-Type"] = "application/json"
+    elif "data" in kwargs:
+        raw_data = kwargs["data"]
+        body_bytes = raw_data.encode("utf-8") if isinstance(raw_data, str) else bytes(raw_data)
+
+    return await asyncio.to_thread(_sync_http_request, url, method=method, headers=hdrs, body=body_bytes, timeout=timeout)
+
+
+class CordHttpModule:
+    """Namespace for HTTP methods: http.get, http.post, etc."""
+
+    async def get(self, url: str, headers: Optional[Dict[str, str]] = None, timeout: float = 30.0, **kwargs) -> CordHttpResponse:
+        return await cord_fetch(url, method="GET", headers=headers, timeout=timeout, **kwargs)
+
+    async def post(self, url: str, json: Any = None, data: Any = None, headers: Optional[Dict[str, str]] = None, timeout: float = 30.0, **kwargs) -> CordHttpResponse:
+        return await cord_fetch(url, method="POST", headers=headers, json_data=json, timeout=timeout, data=data, **kwargs)
+
+    async def put(self, url: str, json: Any = None, data: Any = None, headers: Optional[Dict[str, str]] = None, timeout: float = 30.0, **kwargs) -> CordHttpResponse:
+        return await cord_fetch(url, method="PUT", headers=headers, json_data=json, timeout=timeout, data=data, **kwargs)
+
+    async def delete(self, url: str, headers: Optional[Dict[str, str]] = None, timeout: float = 30.0, **kwargs) -> CordHttpResponse:
+        return await cord_fetch(url, method="DELETE", headers=headers, timeout=timeout, **kwargs)
+
+    async def patch(self, url: str, json: Any = None, data: Any = None, headers: Optional[Dict[str, str]] = None, timeout: float = 30.0, **kwargs) -> CordHttpResponse:
+        return await cord_fetch(url, method="PATCH", headers=headers, json_data=json, timeout=timeout, data=data, **kwargs)
+
+    def __repr__(self) -> str:
+        return "<Module 'http'>"
+
+
 def get_standard_environment() -> Environment:
     """Creates the root global scope with standard built-in functions."""
     env = Environment()
@@ -374,5 +499,11 @@ def get_standard_environment() -> Environment:
     env.define("bool", lambda val: bool(val))
     env.define("type", lambda val: type(val).__name__)
     env.define("range", lambda *args: list(range(*args)))
+
+    # HTTP & JSON Utilities
+    env.define("fetch", cord_fetch)
+    env.define("http", CordHttpModule())
+    env.define("json_parse", lambda text: json.loads(text))
+    env.define("json_stringify", lambda obj: json.dumps(obj))
 
     return env

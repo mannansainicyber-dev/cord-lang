@@ -1,0 +1,15 @@
+bot "WeatherBot"
+
+config:
+    prefix = "!"
+
+command quote:
+    res = fetch("https://dummyjson.com/quotes/random")
+    if res.ok:
+        reply "\"{res.quote}\" — **{res.author}**"
+    else:
+        reply "Could not load quote at this time (Status: {res.status})"
+
+command status:
+    res = http.get("https://httpbin.org/status/200")
+    reply "Server responded with HTTP {res.status}!"
