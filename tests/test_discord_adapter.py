@@ -211,3 +211,24 @@ def test_cord_member_moderation_and_str():
     assert len(adapter.sent_messages) == 1
     assert adapter.sent_messages[0]["action"] == "ban"
     assert adapter.sent_messages[0]["reason"] == "Rule 1"
+
+
+def test_bot_user_and_id_properties():
+    interp = Interpreter()
+    adapter = MockDiscordAdapter(interp)
+    assert adapter.user is not None
+    assert adapter.user.id == "999"
+    assert adapter.id == "999"
+
+    code = (
+        'command check_bot:\n'
+        '    if author.id != bot.user.id:\n'
+        '        reply "Author is not bot: {bot.user.name}"\n'
+    )
+    prog = Parser(Lexer(code).tokenize()).parse()
+    asyncio.run(interp.execute_program(prog, ctx=adapter))
+    adapter.register_command(interp.commands["check_bot"])
+
+    asyncio.run(adapter.dispatch_prefix_command("!check_bot"))
+    assert len(adapter.sent_messages) == 1
+    assert "Author is not bot: CordBot" in adapter.sent_messages[0]["content"]

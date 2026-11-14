@@ -42,6 +42,14 @@ class BaseDiscordAdapter:
     def latency(self) -> int:
         return 0
 
+    @property
+    def user(self) -> CordMember:
+        return CordMember(member_id=999, name=self.bot_name, is_bot=True, bot_adapter=self)
+
+    @property
+    def id(self) -> str:
+        return self.user.id
+
     def apply_config(self, key: str, value: Any):
         if key == "prefix":
             self.prefix = str(value)
@@ -90,6 +98,14 @@ class MockDiscordAdapter(BaseDiscordAdapter):
     @property
     def latency(self) -> int:
         return 15
+
+    @property
+    def user(self) -> CordMember:
+        return self.mock_members.get("999") or CordMember(member_id=999, name=self.bot_name, is_bot=True, bot_adapter=self)
+
+    @property
+    def id(self) -> str:
+        return self.user.id
 
     async def send_reply(self, ctx: ExecutionContext, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
         self.sent_messages.append({
@@ -304,6 +320,17 @@ class DiscordAdapter(BaseDiscordAdapter):
         if hasattr(self, "client") and self.client and hasattr(self.client, "latency"):
             return int(round(self.client.latency * 1000))
         return 0
+
+    @property
+    def user(self) -> CordMember:
+        """Returns bot user as a CordMember."""
+        if hasattr(self, "client") and self.client and self.client.user:
+            return self._to_cord_member(self.client.user)
+        return CordMember(member_id=0, name=self.bot_name, is_bot=True, bot_adapter=self)
+
+    @property
+    def id(self) -> str:
+        return self.user.id
 
     def _validate_token(self):
         if not self.token or self.token.strip() in ("", "YOUR_BOT_TOKEN_HERE", "your_discord_bot_token_here"):
