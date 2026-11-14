@@ -299,6 +299,36 @@ class DeleteStmt(Statement):
 
 
 @dataclass
+class BanStmt(Statement):
+    """Discord moderation: ban target [reason=...] [delete_message_days=...]."""
+    target: ASTNode = field(default_factory=ASTNode)
+    reason: Optional[ASTNode] = None
+    delete_message_days: Optional[ASTNode] = None
+
+
+@dataclass
+class KickStmt(Statement):
+    """Discord moderation: kick target [reason=...]."""
+    target: ASTNode = field(default_factory=ASTNode)
+    reason: Optional[ASTNode] = None
+
+
+@dataclass
+class TimeoutStmt(Statement):
+    """Discord moderation: timeout target [for] duration [reason=...]."""
+    target: ASTNode = field(default_factory=ASTNode)
+    duration: ASTNode = field(default_factory=ASTNode)
+    reason: Optional[ASTNode] = None
+
+
+@dataclass
+class UnbanStmt(Statement):
+    """Discord moderation: unban target [reason=...]."""
+    target: ASTNode = field(default_factory=ASTNode)
+    reason: Optional[ASTNode] = None
+
+
+@dataclass
 class RequireStmt(Statement):
     """Pre-condition requirement: require permission moderate_members."""
     kind: str = "permission"  # "permission", "role", "owner"

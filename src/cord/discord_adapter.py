@@ -88,8 +88,8 @@ class MockDiscordAdapter(BaseDiscordAdapter):
         self.input_queue: asyncio.Queue = asyncio.Queue()
 
         # Default fallback test members & channels
-        default_bot = CordMember(member_id=999, name="CordBot", is_bot=True)
-        default_author = CordMember(member_id=100, name="TestUser", permissions=["moderate_members", "send_messages"])
+        default_bot = CordMember(member_id=999, name="CordBot", is_bot=True, bot_adapter=self)
+        default_author = CordMember(member_id=100, name="TestUser", permissions=["moderate_members", "send_messages"], bot_adapter=self)
         default_channel = CordChannel(channel_id=101, name="general")
         self.mock_members["100"] = default_author
         self.mock_members["testuser"] = default_author
@@ -311,7 +311,9 @@ class MockDiscordAdapter(BaseDiscordAdapter):
             if type_hint in ("member", "user"):
                 match = re.search(r"\d+", token_val)
                 user_id = match.group(0) if match else token_val
-                member = self.mock_members.get(user_id) or CordMember(member_id=int(user_id) if user_id.isdigit() else 888, name=f"User_{user_id}")
+                member = self.mock_members.get(user_id) or CordMember(member_id=int(user_id) if user_id.isdigit() else 888, name=f"User_{user_id}", bot_adapter=self)
+                if not getattr(member, "bot_adapter", None):
+                    member.bot_adapter = self
                 args.append(member)
             elif type_hint in ("int", "integer"):
                 try: args.append(int(token_val))
@@ -339,6 +341,22 @@ class MockDiscordAdapter(BaseDiscordAdapter):
             "action": action,
             **kwargs
         })
+
+    async def ban_member(self, target: Any, reason: Optional[str] = None):
+        member = target if isinstance(target, CordMember) else CordMember(member_id=str(target).strip("<@!>"), name=str(target), bot_adapter=self)
+        self.record_action("ban", member=member, reason=reason)
+
+    async def kick_member(self, target: Any, reason: Optional[str] = None):
+        member = target if isinstance(target, CordMember) else CordMember(member_id=str(target).strip("<@!>"), name=str(target), bot_adapter=self)
+        self.record_action("kick", member=member, reason=reason)
+
+    async def timeout_member(self, target: Any, duration: Any = None, reason: Optional[str] = None):
+        member = target if isinstance(target, CordMember) else CordMember(member_id=str(target).strip("<@!>"), name=str(target), bot_adapter=self)
+        self.record_action("timeout", member=member, duration=duration, reason=reason)
+
+    async def unban_member(self, target: Any, reason: Optional[str] = None):
+        member = target if isinstance(target, CordMember) else CordMember(member_id=str(target).strip("<@!>"), name=str(target), bot_adapter=self)
+        self.record_action("unban", member=member, reason=reason)
 
     async def run_task(self, task_name: str):
         if task_name in self.registered_tasks:
@@ -1047,6 +1065,66 @@ class DiscordAdapter(BaseDiscordAdapter):
             return msg.content
         except asyncio.TimeoutError:
             return None
+
+    async def ban_member(self, target: Any, reason: Optional[str] = None):
+        clean_id = re.sub(r"[^0-9]", "", str(getattr(target, "id", target)))
+        if clean_id and hasattr(self, "client") and self.client:
+            for guild in self.client.guilds:
+                m = guild.get_member(int(clean_id))
+                if m:
+                    try:
+                        await m.ban(reason=reason)
+                        return
+                    except Exception as e:
+                        print(f"Warning: Failed to ban member: {e}")
+                        return
+                try:
+                    u = await self.client.fetch_user(int(clean_id))
+                    if u:
+                        await guild.ban(u, reason=reason)
+                        return
+                except Exception:
+                    pass
+
+    async def kick_member(self, target: Any, reason: Optional[str] = None):
+        clean_id = re.sub(r"[^0-9]", "", str(getattr(target, "id", target)))
+        if clean_id and hasattr(self, "client") and self.client:
+            for guild in self.client.guilds:
+                m = guild.get_member(int(clean_id))
+                if m:
+                    try:
+                        await m.kick(reason=reason)
+                        return
+                    except Exception as e:
+                        print(f"Warning: Failed to kick member: {e}")
+                        return
+
+    async def timeout_member(self, target: Any, duration: Any = None, reason: Optional[str] = None):
+        import datetime
+        clean_id = re.sub(r"[^0-9]", "", str(getattr(target, "id", target)))
+        td = datetime.timedelta(seconds=duration) if isinstance(duration, (int, float)) else datetime.timedelta(minutes=10)
+        if clean_id and hasattr(self, "client") and self.client:
+            for guild in self.client.guilds:
+                m = guild.get_member(int(clean_id))
+                if m:
+                    try:
+                        await m.timeout(td, reason=reason)
+                        return
+                    except Exception as e:
+                        print(f"Warning: Failed to timeout member: {e}")
+                        return
+
+    async def unban_member(self, target: Any, reason: Optional[str] = None):
+        clean_id = re.sub(r"[^0-9]", "", str(getattr(target, "id", target)))
+        if clean_id and hasattr(self, "client") and self.client:
+            for guild in self.client.guilds:
+                try:
+                    u = await self.client.fetch_user(int(clean_id))
+                    if u:
+                        await guild.unban(u, reason=reason)
+                        return
+                except Exception as e:
+                    print(f"Warning: Failed to unban member: {e}")
 
     def start(self):
         """Starts the discord client."""

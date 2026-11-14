@@ -14,7 +14,8 @@ from cord.ast_nodes import (
     ReplyStmt, SendStmt, DeleteStmt, RequireStmt, CooldownStmt, AskStmt, ModeStmt,
     ExprStmt, Literal, DurationLiteral, InterpolatedString, Identifier, ChannelRef,
     BinaryOp, UnaryOp, ListLiteral, MapLiteral, IndexAccess, MemberAccess, CallExpr,
-    EmbedBlock, EmbedField, ButtonItem, SelectOption, SelectItem, ComponentBlock
+    EmbedBlock, EmbedField, ButtonItem, SelectOption, SelectItem, ComponentBlock,
+    BanStmt, KickStmt, TimeoutStmt, UnbanStmt
 )
 from cord.runtime import (
     Environment, CordRuntimeError, ReturnSignal, CordFunction, CordEmbed,
@@ -255,6 +256,64 @@ class Interpreter:
                         target_msg.delete()
             else:
                 await ctx.delete_trigger()
+
+        elif isinstance(stmt, BanStmt):
+            target_obj = await self.eval_expr(stmt.target, env, ctx)
+            reason_val = await self.eval_expr(stmt.reason, env, ctx) if stmt.reason else None
+            reason_str = str(reason_val) if reason_val is not None else None
+            if hasattr(target_obj, "ban") and callable(target_obj.ban):
+                if bot_adapter and not getattr(target_obj, "bot_adapter", None):
+                    target_obj.bot_adapter = bot_adapter
+                if inspect.iscoroutinefunction(target_obj.ban):
+                    await target_obj.ban(reason=reason_str)
+                else:
+                    target_obj.ban(reason=reason_str)
+            elif bot_adapter and hasattr(bot_adapter, "ban_member"):
+                await bot_adapter.ban_member(target_obj, reason=reason_str)
+
+        elif isinstance(stmt, KickStmt):
+            target_obj = await self.eval_expr(stmt.target, env, ctx)
+            reason_val = await self.eval_expr(stmt.reason, env, ctx) if stmt.reason else None
+            reason_str = str(reason_val) if reason_val is not None else None
+            if hasattr(target_obj, "kick") and callable(target_obj.kick):
+                if bot_adapter and not getattr(target_obj, "bot_adapter", None):
+                    target_obj.bot_adapter = bot_adapter
+                if inspect.iscoroutinefunction(target_obj.kick):
+                    await target_obj.kick(reason=reason_str)
+                else:
+                    target_obj.kick(reason=reason_str)
+            elif bot_adapter and hasattr(bot_adapter, "kick_member"):
+                await bot_adapter.kick_member(target_obj, reason=reason_str)
+
+        elif isinstance(stmt, TimeoutStmt):
+            target_obj = await self.eval_expr(stmt.target, env, ctx)
+            dur_val = await self.eval_expr(stmt.duration, env, ctx)
+            reason_val = await self.eval_expr(stmt.reason, env, ctx) if stmt.reason else None
+            reason_str = str(reason_val) if reason_val is not None else None
+            dur_sec = dur_val if isinstance(dur_val, (int, float)) else getattr(dur_val, "seconds", 60)
+            if hasattr(target_obj, "timeout") and callable(target_obj.timeout):
+                if bot_adapter and not getattr(target_obj, "bot_adapter", None):
+                    target_obj.bot_adapter = bot_adapter
+                if inspect.iscoroutinefunction(target_obj.timeout):
+                    await target_obj.timeout(duration=dur_sec, reason=reason_str)
+                else:
+                    target_obj.timeout(duration=dur_sec, reason=reason_str)
+            elif bot_adapter and hasattr(bot_adapter, "timeout_member"):
+                await bot_adapter.timeout_member(target_obj, duration=dur_sec, reason=reason_str)
+
+        elif isinstance(stmt, UnbanStmt):
+            target_obj = await self.eval_expr(stmt.target, env, ctx)
+            reason_val = await self.eval_expr(stmt.reason, env, ctx) if stmt.reason else None
+            reason_str = str(reason_val) if reason_val is not None else None
+            if hasattr(target_obj, "unban") and callable(target_obj.unban):
+                if bot_adapter and not getattr(target_obj, "bot_adapter", None):
+                    target_obj.bot_adapter = bot_adapter
+                if inspect.iscoroutinefunction(target_obj.unban):
+                    await target_obj.unban(reason=reason_str)
+                else:
+                    target_obj.unban(reason=reason_str)
+            elif bot_adapter and hasattr(bot_adapter, "unban_member"):
+                await bot_adapter.unban_member(target_obj, reason=reason_str)
 
         elif isinstance(stmt, RequireStmt):
             if not ctx or not ctx.author:

@@ -42,3 +42,13 @@ command warnings(target: Member = null):
         store.warns = {}
     count = store.warns.get(user.id, 0)
     reply "{user.name} currently has **{count}** warning(s)."
+
+command mute(target: Member, duration: Duration = 10m, reason: String = "Rule violation"):
+    require permission moderate_members
+    timeout target for duration reason=reason
+    reply "🔇 Timed out {target.name} for {duration}."
+
+command banish(target: Member, reason: String = "Severe violation"):
+    require permission moderate_members
+    ban target reason=reason
+    reply "🔨 Successfully banned {target.name}."

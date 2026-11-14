@@ -13,7 +13,8 @@ from cord.ast_nodes import (
     ReplyStmt, SendStmt, DeleteStmt, RequireStmt, CooldownStmt, AskStmt, ModeStmt,
     ExprStmt, Literal, DurationLiteral, InterpolatedString, Identifier, ChannelRef,
     BinaryOp, UnaryOp, ListLiteral, MapLiteral, IndexAccess, MemberAccess, CallExpr,
-    EmbedBlock, EmbedField, ButtonItem, SelectOption, SelectItem, ComponentBlock
+    EmbedBlock, EmbedField, ButtonItem, SelectOption, SelectItem, ComponentBlock,
+    BanStmt, KickStmt, TimeoutStmt, UnbanStmt
 )
 
 
@@ -338,6 +339,14 @@ class Parser:
             return self.parse_send_stmt()
         elif tok.type == TokenType.DELETE:
             return self.parse_delete_stmt()
+        elif tok.type == TokenType.BAN:
+            return self.parse_ban_stmt()
+        elif tok.type == TokenType.KICK:
+            return self.parse_kick_stmt()
+        elif tok.type == TokenType.TIMEOUT:
+            return self.parse_timeout_stmt()
+        elif tok.type == TokenType.UNBAN:
+            return self.parse_unban_stmt()
         elif tok.type == TokenType.REQUIRE:
             return self.parse_require_stmt()
         elif tok.type == TokenType.COOLDOWN:
@@ -417,6 +426,73 @@ class Parser:
         if not self.check(TokenType.NEWLINE) and not self.check(TokenType.EOF):
             target = self.parse_expression()
         return DeleteStmt(target=target, line=tok.line, col=tok.col)
+
+    def parse_ban_stmt(self) -> BanStmt:
+        tok = self.advance()  # consume 'ban'
+        target = self.parse_primary_expression()
+        reason = None
+        delete_days = None
+
+        while not self.check(TokenType.NEWLINE) and not self.check(TokenType.EOF) and not self.check(TokenType.DEDENT):
+            if self.peek().type == TokenType.IDENTIFIER and self.peek().value == "reason":
+                self.advance()
+                self.match(TokenType.ASSIGN)
+                self.match(TokenType.COLON)
+                reason = self.parse_expression()
+            else:
+                reason = self.parse_expression()
+
+        return BanStmt(target=target, reason=reason, delete_message_days=delete_days, line=tok.line, col=tok.col)
+
+    def parse_kick_stmt(self) -> KickStmt:
+        tok = self.advance()  # consume 'kick'
+        target = self.parse_primary_expression()
+        reason = None
+
+        while not self.check(TokenType.NEWLINE) and not self.check(TokenType.EOF) and not self.check(TokenType.DEDENT):
+            if self.peek().type == TokenType.IDENTIFIER and self.peek().value == "reason":
+                self.advance()
+                self.match(TokenType.ASSIGN)
+                self.match(TokenType.COLON)
+                reason = self.parse_expression()
+            else:
+                reason = self.parse_expression()
+
+        return KickStmt(target=target, reason=reason, line=tok.line, col=tok.col)
+
+    def parse_timeout_stmt(self) -> TimeoutStmt:
+        tok = self.advance()  # consume 'timeout'
+        target = self.parse_primary_expression()
+        self.match(TokenType.FOR)  # optional 'for'
+        duration = self.parse_primary_expression()
+        reason = None
+
+        while not self.check(TokenType.NEWLINE) and not self.check(TokenType.EOF) and not self.check(TokenType.DEDENT):
+            if self.peek().type == TokenType.IDENTIFIER and self.peek().value == "reason":
+                self.advance()
+                self.match(TokenType.ASSIGN)
+                self.match(TokenType.COLON)
+                reason = self.parse_expression()
+            else:
+                reason = self.parse_expression()
+
+        return TimeoutStmt(target=target, duration=duration, reason=reason, line=tok.line, col=tok.col)
+
+    def parse_unban_stmt(self) -> UnbanStmt:
+        tok = self.advance()  # consume 'unban'
+        target = self.parse_primary_expression()
+        reason = None
+
+        while not self.check(TokenType.NEWLINE) and not self.check(TokenType.EOF) and not self.check(TokenType.DEDENT):
+            if self.peek().type == TokenType.IDENTIFIER and self.peek().value == "reason":
+                self.advance()
+                self.match(TokenType.ASSIGN)
+                self.match(TokenType.COLON)
+                reason = self.parse_expression()
+            else:
+                reason = self.parse_expression()
+
+        return UnbanStmt(target=target, reason=reason, line=tok.line, col=tok.col)
 
     def parse_require_stmt(self) -> RequireStmt:
         tok = self.advance()  # consume 'require'

@@ -57,6 +57,11 @@ class TokenType(Enum):
     ASK = auto()
     TIMEOUT = auto()
 
+    # Keywords - Moderation Actions
+    BAN = auto()
+    KICK = auto()
+    UNBAN = auto()
+
     # Keywords - UI Components
     WITH = auto()
     BUTTON = auto()
@@ -153,6 +158,9 @@ KEYWORDS = {
     "per": TokenType.PER,
     "ask": TokenType.ASK,
     "timeout": TokenType.TIMEOUT,
+    "ban": TokenType.BAN,
+    "kick": TokenType.KICK,
+    "unban": TokenType.UNBAN,
     "with": TokenType.WITH,
     "button": TokenType.BUTTON,
     "select": TokenType.SELECT,

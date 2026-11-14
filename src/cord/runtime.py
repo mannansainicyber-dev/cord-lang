@@ -165,6 +165,12 @@ class CordMember:
         elif self.bot_adapter and hasattr(self.bot_adapter, "record_action"):
             self.bot_adapter.record_action("kick", member=self, reason=reason)
 
+    async def unban(self, reason: Optional[str] = None):
+        if self.raw_user and hasattr(self.raw_user, "unban"):
+            await self.raw_user.unban(reason=reason)
+        elif self.bot_adapter and hasattr(self.bot_adapter, "record_action"):
+            self.bot_adapter.record_action("unban", member=self, reason=reason)
+
     async def send(self, content: Optional[str] = None):
         if self.raw_user and hasattr(self.raw_user, "send"):
             await self.raw_user.send(content)
