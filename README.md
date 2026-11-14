@@ -4,7 +4,7 @@
 
 **An expressive, beginner-friendly programming language designed specifically for building Discord bots.**
 
-[![CI](https://github.com/your-username/cord/actions/workflows/ci.yml/badge.svg)](https://github.com/mannansainicyber-dev/cord-lang/actions)
+[![CI](https://github.com/mannansainicyber-dev/cord-lang/actions/workflows/ci.yml/badge.svg)](https://github.com/mannansainicyber-dev/cord-lang/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: Cord](https://img.shields.io/badge/code%20style-cord-purple.svg)](https://github.com/mannansainicyber-dev/cord-lang)
@@ -43,7 +43,7 @@ Cord requires **Python 3.10+**.
 ```bash
 # Clone the repository
 git clone https://github.com/mannansainicyber-dev/cord-lang.git
-cd cord
+cd cord-lang
 
 # Install editable package
 pip install -e .
