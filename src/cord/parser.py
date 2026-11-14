@@ -374,8 +374,11 @@ class Parser:
     def parse_require_stmt(self) -> RequireStmt:
         tok = self.advance()  # consume 'require'
         kind_tok = self.consume(TokenType.PERMISSION, "Expected 'permission' after 'require'", "e.g. require permission moderate_members")
-        perm_tok = self.consume(TokenType.IDENTIFIER, "Expected permission name", "e.g. moderate_members, kick_members, administrator")
-        return RequireStmt(kind="permission", value=perm_tok.value, line=tok.line, col=tok.col)
+        next_tok = self.peek()
+        if next_tok.type in (TokenType.IDENTIFIER, TokenType.STRING):
+            perm_tok = self.advance()
+            return RequireStmt(kind="permission", value=str(perm_tok.value), line=tok.line, col=tok.col)
+        raise ParserError("Expected permission name (identifier or string)", next_tok.line, next_tok.col, "e.g. require permission moderate_members")
 
     def parse_cooldown_stmt(self) -> CooldownStmt:
         tok = self.advance()  # consume 'cooldown'

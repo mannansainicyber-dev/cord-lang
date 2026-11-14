@@ -152,3 +152,48 @@ def test_embed_generation():
     assert len(embed.fields) == 2
     assert embed.fields[0]["name"] == "Latency"
     assert embed.fields[0]["value"] == "20ms"
+
+
+def test_if_block_scoping():
+    code = (
+        "fn decide(flag):\n"
+        "    if flag:\n"
+        "        msg = 'yes'\n"
+        "    else:\n"
+        "        msg = 'no'\n"
+        "    return msg\n"
+        "\n"
+        "res_yes = decide(true)\n"
+        "res_no = decide(false)\n"
+    )
+    interp = run_code(code)
+    assert interp.global_env.get("res_yes") == "yes"
+    assert interp.global_env.get("res_no") == "no"
+
+
+def test_dict_and_store_methods():
+    store = Store(db_path=":memory:")
+    code = (
+        "fn check_bal(uid):\n"
+        "    if not store.has('balances'):\n"
+        "        store.balances = {}\n"
+        "    return store.balances.get(uid, 100)\n"
+        "\n"
+        "val = check_bal('user1')\n"
+        "store.balances['user1'] = 250\n"
+        "val_updated = check_bal('user1')\n"
+    )
+    interp = run_code(code, store=store)
+    assert interp.global_env.get("val") == 100
+    assert interp.global_env.get("val_updated") == 250
+
+
+def test_numeric_coercion_and_string_plus():
+    code = (
+        "raw_id = '100'\n"
+        "rolled = (raw_id % 6) + 1\n"
+        "msg = 'Count: ' + 5\n"
+    )
+    interp = run_code(code)
+    assert interp.global_env.get("rolled") == 5
+    assert interp.global_env.get("msg") == "Count: 5"

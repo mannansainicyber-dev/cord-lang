@@ -112,9 +112,32 @@ def cmd_run(args: argparse.Namespace) -> int:
         print_error(format_error_snippet(source, e.line, e.col, e.message, hint))
         return 1
 
+    # Load environment variables (.env)
+    try:
+        from dotenv import load_dotenv
+        custom_env = getattr(args, "env", None)
+        if custom_env and os.path.isfile(custom_env):
+            load_dotenv(dotenv_path=custom_env, override=True)
+        else:
+            # 1. Check current working directory
+            cwd_env = os.path.join(os.getcwd(), ".env")
+            if os.path.isfile(cwd_env):
+                load_dotenv(dotenv_path=cwd_env, override=True)
+
+            # 2. Check script directory
+            script_dir = os.path.dirname(os.path.abspath(filepath))
+            script_env = os.path.join(script_dir, ".env")
+            if os.path.isfile(script_env) and script_dir != os.getcwd():
+                load_dotenv(dotenv_path=script_env, override=False)
+    except ImportError:
+        pass
+
     # Check for Discord token
-    token = os.getenv("DISCORD_TOKEN")
-    if not token or token.strip() in ("", "YOUR_BOT_TOKEN_HERE"):
+    token = getattr(args, "token", None) or os.getenv("DISCORD_TOKEN")
+    if token:
+        token = token.strip().strip("'\"")
+
+    if not token or token in ("", "YOUR_BOT_TOKEN_HERE"):
         print_error(
             "Error: Discord bot token is missing!\n"
             "Please create a .env file in this directory with:\n"
@@ -135,6 +158,9 @@ def cmd_run(args: argparse.Namespace) -> int:
 
         print_info(f"Starting {interpreter.bot_name}...")
         adapter.start()
+        return 0
+    except KeyboardInterrupt:
+        print_info("\nBot stopped by user.")
         return 0
     except Exception as e:
         print_error(f"Failed to start bot: {e}")
@@ -268,6 +294,8 @@ def main(argv=None) -> int:
     run_parser = subparsers.add_parser("run", help="Run a Cord bot file")
     run_parser.add_argument("file", help="Path to .cord file")
     run_parser.add_argument("--db", default="cord_store.db", help="Path to SQLite persistence database")
+    run_parser.add_argument("--token", help="Discord bot token override")
+    run_parser.add_argument("--env", help="Path to custom .env configuration file")
 
     # cord check <file> ...
     check_parser = subparsers.add_parser("check", help="Verify syntax and structure of Cord files")

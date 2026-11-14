@@ -5,6 +5,7 @@ for rigorous, token-free unit and integration testing.
 """
 
 import asyncio
+import inspect
 import os
 import re
 from typing import Any, Dict, List, Optional, Callable, Union
@@ -17,10 +18,10 @@ try:
 except ImportError:
     HAS_DISCORD = False
 
-from cord.ast_nodes import CommandDecl, EventDecl, TaskDecl
+from cord.ast_nodes import CommandDecl, EventDecl, TaskDecl, Literal, DurationLiteral, ASTNode
 from cord.interpreter import Interpreter
 from cord.runtime import (
-    ExecutionContext, CordMember, CordChannel, CordEmbed, CordRuntimeError
+    ExecutionContext, CordMember, CordChannel, CordRole, CordEmbed, CordRuntimeError
 )
 
 
@@ -36,6 +37,10 @@ class BaseDiscordAdapter:
         self.registered_commands: Dict[str, CommandDecl] = {}
         self.registered_events: Dict[str, List[EventDecl]] = {}
         self.registered_tasks: Dict[str, TaskDecl] = {}
+
+    @property
+    def latency(self) -> int:
+        return 0
 
     def apply_config(self, key: str, value: Any):
         if key == "prefix":
@@ -81,6 +86,10 @@ class MockDiscordAdapter(BaseDiscordAdapter):
         self.mock_members["testuser"] = default_author
         self.mock_channels["general"] = default_channel
         self.mock_channels["welcome"] = CordChannel(channel_id=102, name="welcome")
+
+    @property
+    def latency(self) -> int:
+        return 15
 
     async def send_reply(self, ctx: ExecutionContext, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
         self.sent_messages.append({
@@ -218,21 +227,42 @@ class MockDiscordAdapter(BaseDiscordAdapter):
 
             type_hint = (param.type_hint or "").lower()
             if type_hint in ("member", "user"):
-                # Handle mentions: <@12345> or numeric ID
                 match = re.search(r"\d+", token_val)
                 user_id = match.group(0) if match else token_val
                 member = self.mock_members.get(user_id) or CordMember(member_id=int(user_id) if user_id.isdigit() else 888, name=f"User_{user_id}")
                 args.append(member)
-            elif type_hint == "int":
+            elif type_hint in ("int", "integer"):
                 try: args.append(int(token_val))
                 except ValueError: args.append(0)
-            elif type_hint == "float":
+            elif type_hint in ("float", "number"):
                 try: args.append(float(token_val))
                 except ValueError: args.append(0.0)
+            elif type_hint in ("bool", "boolean"):
+                args.append(token_val.lower() in ("true", "yes", "1"))
+            elif type_hint in ("role",):
+                match = re.search(r"\d+", token_val)
+                role_id = match.group(0) if match else "1"
+                args.append(CordRole(role_id=int(role_id) if role_id.isdigit() else 1, name=token_val))
+            elif type_hint in ("channel", "textchannel"):
+                match = re.search(r"\d+", token_val)
+                ch_id = match.group(0) if match else "1"
+                args.append(CordChannel(channel_id=int(ch_id) if ch_id.isdigit() else 1, name=token_val.lstrip("#")))
             else:
                 args.append(token_val)
 
         return args
+
+    def record_action(self, action: str, **kwargs):
+        self.sent_messages.append({
+            "action": action,
+            **kwargs
+        })
+
+    async def run_task(self, task_name: str):
+        if task_name in self.registered_tasks:
+            task = self.registered_tasks[task_name]
+            ctx = ExecutionContext(bot_adapter=self, author=None, channel=None)
+            await self.interpreter.execute_block(task.body, self.interpreter.global_env, ctx)
 
 
 class DiscordAdapter(BaseDiscordAdapter):
@@ -247,7 +277,7 @@ class DiscordAdapter(BaseDiscordAdapter):
         if not HAS_DISCORD:
             raise RuntimeError("discord.py is not installed. Please install discord.py to run live bots.")
 
-        self.token = token or os.getenv("DISCORD_TOKEN")
+        self.token = token if token is not None else os.getenv("DISCORD_TOKEN")
         self._validate_token()
 
         intents = discord.Intents.default()
@@ -259,7 +289,21 @@ class DiscordAdapter(BaseDiscordAdapter):
             intents=intents,
             help_command=None
         )
+        self._active_tasks: Dict[str, asyncio.Task] = {}
+        self._synced: bool = False
         self._setup_listeners()
+
+    def apply_config(self, key: str, value: Any):
+        super().apply_config(key, value)
+        if key == "prefix" and hasattr(self, "client") and self.client:
+            self.client.command_prefix = self.prefix
+
+    @property
+    def latency(self) -> int:
+        """Returns bot websocket latency in milliseconds."""
+        if hasattr(self, "client") and self.client and hasattr(self.client, "latency"):
+            return int(round(self.client.latency * 1000))
+        return 0
 
     def _validate_token(self):
         if not self.token or self.token.strip() in ("", "YOUR_BOT_TOKEN_HERE", "your_discord_bot_token_here"):
@@ -272,16 +316,30 @@ class DiscordAdapter(BaseDiscordAdapter):
         @self.client.event
         async def on_ready():
             print(f"Logged in as {self.client.user} (ID: {self.client.user.id})")
-            
-            # Update presence
-            if self.activity:
-                await self.client.change_presence(
-                    activity=discord.Game(name=self.activity),
-                    status=discord.Status.online
-                )
 
-            # Sync slash commands
-            await self._sync_slash_commands()
+            # Update presence
+            status_map = {
+                "online": discord.Status.online,
+                "idle": discord.Status.idle,
+                "dnd": discord.Status.dnd,
+                "do_not_disturb": discord.Status.dnd,
+                "invisible": discord.Status.invisible,
+                "offline": discord.Status.offline,
+            }
+            disc_status = status_map.get(str(self.status).lower(), discord.Status.online)
+            await self.client.change_presence(
+                activity=discord.Game(name=self.activity) if self.activity else None,
+                status=disc_status
+            )
+
+            # Sync slash commands (only once per bot lifecycle)
+            if not self._synced:
+                await self._sync_slash_commands()
+                self._synced = True
+
+            # Start registered background tasks
+            for task in self.registered_tasks.values():
+                self._start_task(task)
 
             # Trigger Cord ready events
             ctx = ExecutionContext(bot_adapter=self, author=None, channel=None)
@@ -312,31 +370,110 @@ class DiscordAdapter(BaseDiscordAdapter):
         @self.client.event
         async def on_member_join(member: discord.Member):
             member_proxy = self._to_cord_member(member)
-            channel_proxy = self._to_cord_channel(member.guild.system_channel or member.guild.text_channels[0])
+            sys_ch = member.guild.system_channel
+            if not sys_ch and member.guild.text_channels:
+                sys_ch = member.guild.text_channels[0]
+            channel_proxy = self._to_cord_channel(sys_ch) if sys_ch else None
             ctx = ExecutionContext(bot_adapter=self, author=member_proxy, channel=channel_proxy)
             await self.interpreter.execute_event("member_join", ctx, {"member": member_proxy})
 
         @self.client.event
         async def on_member_remove(member: discord.Member):
             member_proxy = self._to_cord_member(member)
-            channel_proxy = self._to_cord_channel(member.guild.system_channel or member.guild.text_channels[0])
+            sys_ch = member.guild.system_channel
+            if not sys_ch and member.guild.text_channels:
+                sys_ch = member.guild.text_channels[0]
+            channel_proxy = self._to_cord_channel(sys_ch) if sys_ch else None
             ctx = ExecutionContext(bot_adapter=self, author=member_proxy, channel=channel_proxy)
             await self.interpreter.execute_event("member_leave", ctx, {"member": member_proxy})
+
+    def _start_task(self, task: TaskDecl):
+        """Starts a background task loop without duplicating across reconnects."""
+        if task.name in self._active_tasks and not self._active_tasks[task.name].done():
+            return
+
+        async def task_loop():
+            interval = task.interval.seconds if task.interval else 60.0
+            while not self.client.is_closed():
+                try:
+                    await asyncio.sleep(interval)
+                    ctx = ExecutionContext(bot_adapter=self, author=None, channel=None)
+                    await self.interpreter.execute_block(task.body, self.interpreter.global_env, ctx)
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    print(f"Error in task '{task.name}': {e}")
+
+        self._active_tasks[task.name] = asyncio.create_task(task_loop())
 
     async def _sync_slash_commands(self):
         """Registers all declared slash commands onto discord.py's CommandTree and syncs with Discord."""
         tree = self.client.tree
 
+        TYPE_MAPPING = {
+            "member": discord.Member,
+            "user": discord.User,
+            "channel": discord.TextChannel,
+            "role": discord.Role,
+            "int": int,
+            "integer": int,
+            "float": float,
+            "number": float,
+            "bool": bool,
+            "boolean": bool,
+            "str": str,
+            "string": str,
+        }
+
         for cmd_name, cmd in self.registered_commands.items():
             if cmd.mode == "prefix":
                 continue
 
-            # Build slash command callback dynamically
-            desc = cmd.description or f"Cord command: {cmd_name}"
+            desc = (cmd.description or f"Cord command: {cmd_name}").strip()
+            if not desc:
+                desc = f"Cord command: {cmd_name}"
+            if len(desc) > 100:
+                desc = desc[:97] + "..."
+
+            slash_name = cmd_name.lower()
+            if len(slash_name) > 32:
+                slash_name = slash_name[:32]
 
             def make_slash_callback(command_decl: CommandDecl):
-                async def slash_callback(interaction: discord.Interaction, **kwargs):
-                    await interaction.response.defer()
+                sig_params = [
+                    inspect.Parameter("interaction", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=discord.Interaction)
+                ]
+
+                for param in command_decl.params:
+                    p_name = param.name.lower()
+                    hint = (param.type_hint or "str").lower()
+                    base_type = TYPE_MAPPING.get(hint, str)
+
+                    default_node = param.default_value
+                    if default_node is not None:
+                        if isinstance(default_node, Literal):
+                            def_val = default_node.value
+                        elif isinstance(default_node, DurationLiteral):
+                            def_val = default_node.seconds
+                        else:
+                            def_val = None
+
+                        if def_val is None:
+                            ann = Optional[base_type]
+                            def_val = None
+                        else:
+                            ann = base_type
+                        sig_params.append(
+                            inspect.Parameter(p_name, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=ann, default=def_val)
+                        )
+                    else:
+                        sig_params.append(
+                            inspect.Parameter(p_name, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=base_type)
+                        )
+
+                async def slash_callback(interaction: discord.Interaction, *args, **kwargs):
+                    if not interaction.response.is_done():
+                        await interaction.response.defer()
                     author_proxy = self._to_cord_member(interaction.user)
                     channel_proxy = self._to_cord_channel(interaction.channel)
                     ctx = ExecutionContext(
@@ -348,12 +485,33 @@ class DiscordAdapter(BaseDiscordAdapter):
                         raw_event=interaction
                     )
                     setattr(ctx, "command_name", command_decl.name)
-                    await self.interpreter.execute_command(command_decl, ctx, kwargs=kwargs)
 
+                    converted_kwargs = {}
+                    for param in command_decl.params:
+                        val = kwargs.get(param.name.lower(), kwargs.get(param.name))
+                        if val is None:
+                            converted_kwargs[param.name] = None
+                        elif isinstance(val, (discord.Member, discord.User)):
+                            converted_kwargs[param.name] = self._to_cord_member(val)
+                        elif isinstance(val, discord.abc.GuildChannel):
+                            converted_kwargs[param.name] = self._to_cord_channel(val)
+                        elif isinstance(val, discord.Role):
+                            converted_kwargs[param.name] = CordRole(role_id=val.id, name=val.name)
+                        else:
+                            converted_kwargs[param.name] = val
+
+                    await self.interpreter.execute_command(command_decl, ctx, kwargs=converted_kwargs)
+
+                slash_callback.__name__ = slash_name
+                slash_callback.__signature__ = inspect.Signature(parameters=sig_params)
                 return slash_callback
 
+            # Remove previous command if already in tree to avoid duplicate registration error
+            if tree.get_command(slash_name):
+                tree.remove_command(slash_name)
+
             app_cmd = app_commands.Command(
-                name=cmd_name,
+                name=slash_name,
                 description=desc,
                 callback=make_slash_callback(cmd)
             )
@@ -373,10 +531,10 @@ class DiscordAdapter(BaseDiscordAdapter):
         cmd_name = parts[0]
         raw_args = parts[1] if len(parts) > 1 else ""
 
-        if cmd_name not in self.registered_commands:
+        cmd = self.registered_commands.get(cmd_name) or self.registered_commands.get(cmd_name.lower())
+        if not cmd:
             return
 
-        cmd = self.registered_commands[cmd_name]
         if cmd.mode == "slash":
             return
 
@@ -411,36 +569,62 @@ class DiscordAdapter(BaseDiscordAdapter):
                 match = re.search(r"\d+", token_val)
                 user_id = int(match.group(0)) if match else 0
                 discord_member = guild.get_member(user_id) if guild else None
+                if not discord_member and hasattr(self, "client") and user_id:
+                    discord_member = self.client.get_user(user_id)
                 if discord_member:
                     args.append(self._to_cord_member(discord_member))
                 else:
-                    args.append(CordMember(member_id=user_id, name=f"User_{user_id}"))
-            elif type_hint == "int":
+                    args.append(CordMember(member_id=user_id, name=f"User_{user_id}", bot_adapter=self))
+            elif type_hint in ("int", "integer"):
                 try: args.append(int(token_val))
                 except ValueError: args.append(0)
-            elif type_hint == "float":
+            elif type_hint in ("float", "number"):
                 try: args.append(float(token_val))
                 except ValueError: args.append(0.0)
+            elif type_hint in ("bool", "boolean"):
+                args.append(token_val.lower() in ("true", "yes", "1"))
+            elif type_hint in ("role",):
+                match = re.search(r"\d+", token_val)
+                role_id = int(match.group(0)) if match else 0
+                discord_role = guild.get_role(role_id) if guild else None
+                if discord_role:
+                    args.append(CordRole(role_id=discord_role.id, name=discord_role.name))
+                else:
+                    args.append(CordRole(role_id=role_id, name=f"role_{role_id}"))
+            elif type_hint in ("channel", "textchannel"):
+                match = re.search(r"\d+", token_val)
+                ch_id = int(match.group(0)) if match else 0
+                ch = guild.get_channel(ch_id) if guild else None
+                if ch:
+                    args.append(self._to_cord_channel(ch))
+                else:
+                    args.append(CordChannel(channel_id=ch_id, name=token_val.lstrip("#")))
             else:
                 args.append(token_val)
 
         return args
 
-    def _to_cord_member(self, user: Union[discord.Member, discord.User]) -> CordMember:
+    def _to_cord_member(self, user: Union[discord.Member, discord.User]) -> Optional[CordMember]:
+        if user is None:
+            return None
         perms = []
         if isinstance(user, discord.Member):
             perms = [perm for perm, val in user.guild_permissions if val]
         return CordMember(
             member_id=user.id,
             name=user.name,
-            discriminator=user.discriminator,
+            discriminator=getattr(user, "discriminator", "0"),
             is_bot=user.bot,
             permissions=perms,
-            avatar_url=str(user.display_avatar.url)
+            avatar_url=str(user.display_avatar.url) if hasattr(user, "display_avatar") else "",
+            raw_user=user,
+            bot_adapter=self
         )
 
-    def _to_cord_channel(self, channel: Any) -> CordChannel:
-        return CordChannel(channel_id=channel.id, name=getattr(channel, "name", "channel"))
+    def _to_cord_channel(self, channel: Any) -> Optional[CordChannel]:
+        if channel is None:
+            return None
+        return CordChannel(channel_id=getattr(channel, "id", 0), name=getattr(channel, "name", "channel"))
 
     def _to_discord_embed(self, cord_embed: CordEmbed) -> discord.Embed:
         color_val = None
@@ -467,8 +651,14 @@ class DiscordAdapter(BaseDiscordAdapter):
 
     async def send_reply(self, ctx: ExecutionContext, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
         discord_embed = self._to_discord_embed(embed) if embed else None
+        if content is None and discord_embed is None:
+            content = " "
+
         if ctx.is_interaction and isinstance(ctx.raw_event, discord.Interaction):
-            await ctx.raw_event.followup.send(content=content, embed=discord_embed)
+            if ctx.raw_event.response.is_done():
+                await ctx.raw_event.followup.send(content=content, embed=discord_embed)
+            else:
+                await ctx.raw_event.response.send_message(content=content, embed=discord_embed)
         elif isinstance(ctx.raw_event, discord.Message):
             await ctx.raw_event.reply(content=content, embed=discord_embed)
         elif ctx.channel:
@@ -479,10 +669,28 @@ class DiscordAdapter(BaseDiscordAdapter):
 
     async def send_channel_message(self, channel_ref: Any, content: Optional[str] = None, embed: Optional[CordEmbed] = None):
         discord_embed = self._to_discord_embed(embed) if embed else None
-        channel_name = channel_ref.name if hasattr(channel_ref, "name") else str(channel_ref).lstrip("#")
+        if content is None and discord_embed is None:
+            content = " "
+
+        if hasattr(channel_ref, "id"):
+            try:
+                ch = self.client.get_channel(int(channel_ref.id))
+                if ch:
+                    await ch.send(content=content, embed=discord_embed)
+                    return
+            except (ValueError, TypeError):
+                pass
+
+        target = getattr(channel_ref, "name", str(channel_ref)).lstrip("#")
+        if target.isdigit():
+            ch = self.client.get_channel(int(target))
+            if ch:
+                await ch.send(content=content, embed=discord_embed)
+                return
+
         for guild in self.client.guilds:
             for ch in guild.text_channels:
-                if ch.name == channel_name:
+                if ch.name.lower() == target.lower():
                     await ch.send(content=content, embed=discord_embed)
                     return
 
@@ -492,7 +700,11 @@ class DiscordAdapter(BaseDiscordAdapter):
 
     async def wait_for_input(self, ctx: ExecutionContext, timeout: float = 60.0) -> Optional[str]:
         def check(m: discord.Message):
-            return m.author.id == int(ctx.author.id) and m.channel.id == int(ctx.channel.id)
+            if ctx.author and str(m.author.id) != str(ctx.author.id):
+                return False
+            if ctx.channel and str(m.channel.id) != str(ctx.channel.id):
+                return False
+            return True
 
         try:
             msg = await self.client.wait_for("message", check=check, timeout=timeout)
@@ -502,4 +714,7 @@ class DiscordAdapter(BaseDiscordAdapter):
 
     def start(self):
         """Starts the discord client."""
-        self.client.run(self.token)
+        try:
+            self.client.run(self.token)
+        except KeyboardInterrupt:
+            pass

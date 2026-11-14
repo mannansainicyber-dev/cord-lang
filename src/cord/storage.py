@@ -83,19 +83,29 @@ class Store:
     def __init__(self, db_path: str = "cord_store.db"):
         self.db_path = db_path
         self._cache: Dict[str, Any] = {}
-        self._conn: Optional[sqlite3.Connection] = None
-        if self.db_path == ":memory:":
-            self._conn = sqlite3.connect(":memory:")
-            self._conn.row_factory = sqlite3.Row
+        if self.db_path != ":memory:":
+            db_dir = os.path.dirname(os.path.abspath(self.db_path))
+            if db_dir:
+                os.makedirs(db_dir, exist_ok=True)
+        self._conn: Optional[sqlite3.Connection] = sqlite3.connect(self.db_path, check_same_thread=False)
+        self._conn.row_factory = sqlite3.Row
         self._init_db()
         self._load_all()
 
     def _get_connection(self) -> sqlite3.Connection:
+        if self._conn is None:
+            self._conn = sqlite3.connect(self.db_path, check_same_thread=False)
+            self._conn.row_factory = sqlite3.Row
+        return self._conn
+
+    def close(self):
+        """Cleanly close the persistent SQLite connection."""
         if self._conn is not None:
-            return self._conn
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+            try:
+                self._conn.close()
+            except Exception:
+                pass
+            self._conn = None
 
     def _init_db(self):
         # Create storage table if it does not exist

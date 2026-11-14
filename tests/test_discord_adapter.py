@@ -137,3 +137,77 @@ def test_token_validation_error():
     with pytest.raises(ValueError) as exc:
         DiscordAdapter(interp, token="YOUR_BOT_TOKEN_HERE")
     assert "Missing or invalid Discord bot token" in str(exc.value)
+
+
+def test_slash_command_signature_generation():
+    code = (
+        'command ping:\n'
+        '    reply "Pong! Latency: {bot.latency}ms"\n'
+        '\n'
+        'command hello(target: Member = null):\n'
+        '    user = target or author\n'
+        '    reply "Hello {user.mention}!"\n'
+        '\n'
+        'slash command roll(sides: Int = 6):\n'
+        '    reply "Rolled!"\n'
+    )
+    lexer = Lexer(code)
+    program = Parser(lexer.tokenize()).parse()
+    interp = Interpreter()
+    adapter = DiscordAdapter(interp, token="dummy_token_for_offline_test_12345")
+    asyncio.run(interp.execute_program(program, ctx=adapter))
+
+    # Test sync slash command callback generation without calling remote Discord gateway
+    asyncio.run(adapter._sync_slash_commands())
+
+    tree = adapter.client.tree
+    ping_cmd = tree.get_command("ping")
+    assert ping_cmd is not None
+    assert len(ping_cmd.parameters) == 0
+
+    hello_cmd = tree.get_command("hello")
+    assert hello_cmd is not None
+    assert len(hello_cmd.parameters) == 1
+    assert hello_cmd.parameters[0].name == "target"
+    assert hello_cmd.parameters[0].required is False
+
+    roll_cmd = tree.get_command("roll")
+    assert roll_cmd is not None
+    assert len(roll_cmd.parameters) == 1
+    assert roll_cmd.parameters[0].name == "sides"
+    assert roll_cmd.parameters[0].required is False
+
+
+def test_background_task_mock_execution():
+    code = (
+        'task heartbeat every 1m:\n'
+        '    send #logs "Heartbeat tick"\n'
+    )
+    _, adapter = setup_bot(code)
+    assert "heartbeat" in adapter.registered_tasks
+
+    asyncio.run(adapter.run_task("heartbeat"))
+    assert len(adapter.sent_messages) == 1
+    assert adapter.sent_messages[0]["action"] == "send"
+    assert adapter.sent_messages[0]["channel"] == "logs"
+    assert adapter.sent_messages[0]["content"] == "Heartbeat tick"
+
+
+def test_cord_channel_str_and_mention():
+    ch = CordChannel(101, "general")
+    assert str(ch) == "general"
+    assert ch.mention == "<#101>"
+    assert repr(ch) == "<Channel #general>"
+
+
+def test_cord_member_moderation_and_str():
+    interp = Interpreter()
+    adapter = MockDiscordAdapter(interp)
+    member = CordMember(member_id=555, name="BadActor", bot_adapter=adapter)
+    assert str(member) == "BadActor"
+    assert member.bot is False
+
+    asyncio.run(member.ban(reason="Rule 1"))
+    assert len(adapter.sent_messages) == 1
+    assert adapter.sent_messages[0]["action"] == "ban"
+    assert adapter.sent_messages[0]["reason"] == "Rule 1"

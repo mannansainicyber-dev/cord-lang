@@ -109,17 +109,21 @@ class CordEmbed:
         return f"CordEmbed(title={repr(self.title)}, description={repr(self.description)})"
 
 
+import re
+
 class CordMember:
     """Discord Member representation."""
 
     def __init__(
         self,
-        member_id: int,
+        member_id: Any,
         name: str,
         discriminator: str = "0",
         is_bot: bool = False,
         permissions: Optional[List[str]] = None,
-        avatar_url: str = ""
+        avatar_url: str = "",
+        raw_user: Any = None,
+        bot_adapter: Any = None
     ):
         self.id = str(member_id)
         self.name = name
@@ -127,15 +131,76 @@ class CordMember:
         self.discriminator = discriminator
         self.is_bot = is_bot
         self.permissions = set(permissions or ["send_messages", "read_messages"])
-        self.avatar_url = avatar_url or f"https://cdn.discordapp.com/embed/avatars/{int(member_id) % 5}.png"
+        try:
+            numeric_id = int(member_id)
+        except (ValueError, TypeError):
+            numeric_id = 0
+        self.avatar_url = avatar_url or f"https://cdn.discordapp.com/embed/avatars/{numeric_id % 5}.png"
+        self.raw_user = raw_user
+        self.bot_adapter = bot_adapter
+        self._adapter = bot_adapter
+
+    @property
+    def bot(self) -> bool:
+        """Alias for is_bot, matching Discord.py user.bot boolean attribute."""
+        return self.is_bot
 
     def has_permission(self, perm: str) -> bool:
         if "administrator" in self.permissions:
             return True
-        return perm.lower() in self.permissions
+        norm_perm = re.sub(r"(?<!^)(?=[A-Z])", "_", perm).lower()
+        return norm_perm in self.permissions or perm.lower() in self.permissions
+
+    async def ban(self, reason: Optional[str] = None):
+        if self.raw_user and hasattr(self.raw_user, "ban"):
+            await self.raw_user.ban(reason=reason)
+        elif self.bot_adapter and hasattr(self.bot_adapter, "record_action"):
+            self.bot_adapter.record_action("ban", member=self, reason=reason)
+
+    async def kick(self, reason: Optional[str] = None):
+        if self.raw_user and hasattr(self.raw_user, "kick"):
+            await self.raw_user.kick(reason=reason)
+        elif self.bot_adapter and hasattr(self.bot_adapter, "record_action"):
+            self.bot_adapter.record_action("kick", member=self, reason=reason)
+
+    async def send(self, content: Optional[str] = None):
+        if self.raw_user and hasattr(self.raw_user, "send"):
+            await self.raw_user.send(content)
+        elif self.bot_adapter and hasattr(self.bot_adapter, "record_action"):
+            self.bot_adapter.record_action("send", member=self, content=content)
+
+    async def timeout(self, duration: Any = None, reason: Optional[str] = None):
+        if self.raw_user and hasattr(self.raw_user, "timeout"):
+            import datetime
+            td = None
+            if isinstance(duration, (int, float)):
+                td = datetime.timedelta(seconds=duration)
+            elif isinstance(duration, datetime.timedelta):
+                td = duration
+            await self.raw_user.timeout(td, reason=reason)
+        elif self.bot_adapter and hasattr(self.bot_adapter, "record_action"):
+            self.bot_adapter.record_action("timeout", member=self, duration=duration, reason=reason)
 
     def __repr__(self) -> str:
         return f"<Member id={self.id} name={repr(self.name)}>"
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class CordRole:
+    """Discord Role representation."""
+
+    def __init__(self, role_id: int, name: str):
+        self.id = str(role_id)
+        self.name = name
+        self.mention = f"<@&{role_id}>"
+
+    def __repr__(self) -> str:
+        return f"<Role @{self.name}>"
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class CordChannel:
@@ -148,6 +213,9 @@ class CordChannel:
 
     def __repr__(self) -> str:
         return f"<Channel #{self.name}>"
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class ExecutionContext:

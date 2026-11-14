@@ -205,9 +205,8 @@ class Interpreter:
                 raise CordRuntimeError(f"'{type(iterable).__name__}' object is not iterable", stmt.line, stmt.col)
 
             for item in iter_items:
-                loop_env = Environment(parent=env)
-                loop_env.define(stmt.var_name, item)
-                await self.execute_block(stmt.body, loop_env, ctx)
+                env.assign(stmt.var_name, item)
+                await self.execute_block(stmt.body, env, ctx)
 
         elif isinstance(stmt, ReturnStmt):
             ret_val = await self.eval_expr(stmt.value, env, ctx) if stmt.value else None
@@ -240,7 +239,15 @@ class Interpreter:
         elif isinstance(stmt, DeleteStmt):
             if not ctx:
                 raise CordRuntimeError("'delete' requires an active command/event context", stmt.line, stmt.col)
-            await ctx.delete_trigger()
+            if stmt.target:
+                target_msg = await self.eval_expr(stmt.target, env, ctx)
+                if hasattr(target_msg, "delete") and callable(target_msg.delete):
+                    if inspect.iscoroutinefunction(target_msg.delete):
+                        await target_msg.delete()
+                    else:
+                        target_msg.delete()
+            else:
+                await ctx.delete_trigger()
 
         elif isinstance(stmt, RequireStmt):
             if not ctx or not ctx.author:
@@ -286,9 +293,8 @@ class Interpreter:
             raise CordRuntimeError(f"Unsupported statement type: {type(stmt).__name__}", stmt.line, stmt.col)
 
     async def execute_block(self, block: Block, env: Environment, ctx: Optional[ExecutionContext] = None):
-        block_env = Environment(parent=env)
         for stmt in block.statements:
-            await self.execute_statement(stmt, block_env, ctx)
+            await self.execute_statement(stmt, env, ctx)
 
     async def assign_target(self, target: ASTNode, value: Any, env: Environment, ctx: Optional[ExecutionContext]):
         if isinstance(target, Identifier):
@@ -366,8 +372,25 @@ class Interpreter:
 
             right_val = await self.eval_expr(expr.right, env, ctx)
             op = expr.op
-            if op == "+": return left_val + right_val
-            elif op == "-": return left_val - right_val
+
+            if op == "+":
+                if isinstance(left_val, str) and not isinstance(right_val, str):
+                    return left_val + str(right_val)
+                elif not isinstance(left_val, str) and isinstance(right_val, str):
+                    return str(left_val) + right_val
+                return left_val + right_val
+
+            if op in ("-", "*", "/", "%"):
+                if isinstance(left_val, str) and (left_val.isdigit() or (left_val.startswith("-") and left_val[1:].isdigit())):
+                    left_val = int(left_val)
+                if isinstance(right_val, str) and (right_val.isdigit() or (right_val.startswith("-") and right_val[1:].isdigit())):
+                    right_val = int(right_val)
+
+            if left_val is None or right_val is None:
+                if op in ("<", "<=", ">", ">="):
+                    raise CordRuntimeError(f"Cannot compare null with a value in comparison '{op}'", expr.line, expr.col)
+
+            if op == "-": return left_val - right_val
             elif op == "*": return left_val * right_val
             elif op == "/": return left_val / right_val
             elif op == "%": return left_val % right_val
@@ -415,12 +438,23 @@ class Interpreter:
 
         elif isinstance(expr, MemberAccess):
             target_obj = await self.eval_expr(expr.target, env, ctx)
+            if target_obj is None:
+                return None
             member = expr.member
-            if isinstance(target_obj, dict):
-                return target_obj.get(member)
+            # If target_obj has a callable attribute/method directly, return it
             if hasattr(target_obj, member):
                 attr = getattr(target_obj, member)
-                return attr
+                if callable(attr):
+                    return attr
+            # Check mapping keys
+            if isinstance(target_obj, dict):
+                if member in target_obj:
+                    return target_obj[member]
+                if hasattr(target_obj, member):
+                    return getattr(target_obj, member)
+                return None
+            if hasattr(target_obj, member):
+                return getattr(target_obj, member)
             try:
                 return target_obj[member]
             except Exception:
