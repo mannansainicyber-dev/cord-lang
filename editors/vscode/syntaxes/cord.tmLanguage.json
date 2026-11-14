@@ -1,0 +1,119 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Cord",
+  "scopeName": "source.cord",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#channels" },
+    { "include": "#durations" },
+    { "include": "#numbers" },
+    { "include": "#constants" },
+    { "include": "#keywords" },
+    { "include": "#components" },
+    { "include": "#moderation" },
+    { "include": "#embeds" },
+    { "include": "#functions" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.number-sign.cord",
+      "match": "#.*$"
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.cord",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.interpolation.cord",
+              "match": "\\{[^\\}]+\\}"
+            },
+            {
+              "name": "constant.character.escape.cord",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.cord",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.interpolation.cord",
+              "match": "\\{[^\\}]+\\}"
+            },
+            {
+              "name": "constant.character.escape.cord",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "channels": {
+      "name": "constant.other.channel.cord",
+      "match": "#[a-zA-Z0-9_-]+"
+    },
+    "durations": {
+      "name": "constant.numeric.duration.cord",
+      "match": "\\b[0-9]+(s|m|h|d)\\b"
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.cord",
+          "match": "\\b[0-9]+\\.[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.cord",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "constants": {
+      "name": "constant.language.cord",
+      "match": "\\b(true|false|null)\\b"
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.cord",
+          "match": "\\b(if|elif|else|while|for|in|return|pass|when|every|require|cooldown|per|ask|timeout|import|as)\\b"
+        },
+        {
+          "name": "keyword.declaration.cord",
+          "match": "\\b(bot|config|command|slash|prefix|both|mode|event|task|fn)\\b"
+        },
+        {
+          "name": "keyword.action.discord.cord",
+          "match": "\\b(reply|send|delete|fetch)\\b"
+        }
+      ]
+    },
+    "components": {
+      "name": "keyword.component.discord.cord",
+      "match": "\\b(with|button|select|option)\\b"
+    },
+    "moderation": {
+      "name": "keyword.moderation.discord.cord",
+      "match": "\\b(ban|kick|timeout|unban)\\b"
+    },
+    "embeds": {
+      "name": "keyword.embed.discord.cord",
+      "match": "\\b(embed|title|description|color|thumbnail|image|footer|field|inline)\\b"
+    },
+    "functions": {
+      "name": "entity.name.function.cord",
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\\s*\\()"
+    },
+    "operators": {
+      "name": "keyword.operator.cord",
+      "match": "(\\+|-|\\*|/|%|==|!=|<=|>=|<|>|=|\\+=|-=|\\*=|/=|\\band\\b|\\bor\\b|\\bnot\\b)"
+    }
+  }
+}

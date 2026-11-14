@@ -1,0 +1,30 @@
+{
+  "name": "cord-vscode",
+  "displayName": "Cord Language Support",
+  "description": "Rich syntax highlighting and language configuration for the Cord programming language.",
+  "version": "0.2.0",
+  "publisher": "cord-lang",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "cord",
+        "aliases": ["Cord", "cord"],
+        "extensions": [".cord"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cord",
+        "scopeName": "source.cord",
+        "path": "./syntaxes/cord.tmLanguage.json"
+      }
+    ]
+  }
+}

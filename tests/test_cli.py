@@ -12,7 +12,7 @@ def test_cli_version(capsys):
         main(["--version"])
     assert exc.value.code == 0
     captured = capsys.readouterr()
-    assert "Cord 0.1.0" in captured.out
+    assert "Cord 0.2.0" in captured.out
 
 
 def test_cli_check_valid(tmp_path):
@@ -75,3 +75,30 @@ def test_cli_run_missing_token(tmp_path, monkeypatch, capsys):
     assert code == 1
     captured = capsys.readouterr()
     assert "Discord bot token is missing" in captured.err
+
+
+def test_cli_docker_scaffold(tmp_path):
+    bot_file = tmp_path / "bot.cord"
+    bot_file.write_text('bot "DockerBot"\n')
+    code = main(["docker", "-o", str(tmp_path)])
+    assert code == 0
+
+    assert (tmp_path / "Dockerfile").is_file()
+    assert (tmp_path / "docker-compose.yml").is_file()
+    assert (tmp_path / ".dockerignore").is_file()
+
+    df_content = (tmp_path / "Dockerfile").read_text()
+    assert '"cord", "run", "bot.cord"' in df_content
+    compose_content = (tmp_path / "docker-compose.yml").read_text()
+    assert 'restart: unless-stopped' in compose_content
+
+
+def test_cli_repl_exit(monkeypatch, capsys):
+    inputs = iter([".exit"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(inputs))
+
+    code = main(["repl"])
+    assert code == 0
+    captured = capsys.readouterr()
+    assert "Interactive REPL" in captured.out
+    assert "Goodbye!" in captured.out
