@@ -39,3 +39,5 @@ jobs:
         cord check examples/embeds.cord
         cord check examples/interactive.cord
         cord check examples/economy.cord
+        cord check examples/components.cord
+        cord check examples/api_fetch.cord

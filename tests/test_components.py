@@ -168,7 +168,7 @@ def test_select_menu_execution_and_selection_event():
 
 def test_discord_view_conversion():
     interpreter = Interpreter()
-    adapter = DiscordAdapter(interpreter)
+    adapter = DiscordAdapter(interpreter, token="dummy_token_for_offline_test")
 
     cord_view = CordView([
         CordButton(custom_id="btn_test", label="Test", style="danger", emoji="⚠️"),
